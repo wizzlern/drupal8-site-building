@@ -1,0 +1,7 @@
+langcode: nl
+status: true
+dependencies: {  }
+id: basic
+label: Standaardblok
+revision: 0
+description: 'Een standaardblok bevat een titel en een berichttekst.'

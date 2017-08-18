@@ -1,0 +1,10 @@
+langcode: nl
+status: true
+dependencies:
+  module:
+    - comment
+id: comment_publish_action
+label: 'Reactie publiceren'
+type: comment
+plugin: comment_publish_action
+configuration: {  }

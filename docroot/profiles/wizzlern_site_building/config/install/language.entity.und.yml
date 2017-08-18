@@ -1,0 +1,8 @@
+langcode: nl
+status: true
+dependencies: {  }
+id: und
+label: 'Niet gespecificeerd'
+direction: ltr
+weight: 2
+locked: true

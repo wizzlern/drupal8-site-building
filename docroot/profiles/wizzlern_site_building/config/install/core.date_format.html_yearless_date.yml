@@ -1,0 +1,7 @@
+langcode: nl
+status: true
+dependencies: {  }
+id: html_yearless_date
+label: 'HTML datum zonder jaar'
+locked: true
+pattern: m-d

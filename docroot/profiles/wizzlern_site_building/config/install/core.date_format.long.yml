@@ -1,0 +1,7 @@
+langcode: nl
+status: true
+dependencies: {  }
+id: long
+label: 'Standaarddatum - lang'
+locked: false
+pattern: 'l, F j, Y - H:i'

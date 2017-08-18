@@ -1,0 +1,9 @@
+langcode: nl
+status: true
+dependencies: {  }
+id: feedback
+label: Website-feedback
+recipients:
+  - dtd@example.com
+reply: ''
+weight: 0

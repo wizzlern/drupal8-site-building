@@ -1,0 +1,21 @@
+langcode: nl
+status: true
+dependencies:
+  module:
+    - ctools
+    - node
+id: node_title_news
+label: 'News + node title'
+type: 'canonical_entities:node'
+pattern: 'nieuws/[node:title]'
+selection_criteria:
+  61d22d78-56aa-46d1-a800-cf92c10bab2d:
+    id: node_type
+    bundles:
+      news: news
+    negate: false
+    context_mapping:
+      node: node
+    selection_logic: and
+weight: -5
+relationships: {  }

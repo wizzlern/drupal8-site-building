@@ -1,0 +1,10 @@
+langcode: nl
+status: true
+dependencies:
+  module:
+    - node
+id: node_save_action
+label: 'Inhoud opslaan'
+type: node
+plugin: node_save_action
+configuration: {  }

@@ -1,0 +1,53 @@
+name: Wizzlern Site Building
+type: profile
+description: 'Install Drupal and be ready for the Wizzlern site building training.'
+version: 8.0.0
+core: 8.x
+dependencies:
+  - admin_toolbar
+  - automated_cron
+  - block
+  - block_content
+  - breakpoint
+  - ckeditor
+  - color
+  - comment
+  - config
+  - contact
+  - contextual
+  - ctools
+  - datetime
+  - dblog
+  - dynamic_page_cache
+  - editor
+  - field
+  - field_ui
+  - file
+  - filter
+  - help
+  - history
+  - image
+  - language
+  - link
+  - locale
+  - menu_ui
+  - node
+  - options
+  - page_cache
+  - path
+  - quickedit
+  - rdf
+  - shortcut
+  - system
+  - taxonomy
+  - text
+  - token
+  - toolbar
+  - user
+  - views_ui
+  - menu_link_content
+  - pathauto
+  - views
+themes:
+  - bartik
+  - seven

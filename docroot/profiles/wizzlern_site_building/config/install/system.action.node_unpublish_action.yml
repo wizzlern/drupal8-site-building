@@ -1,0 +1,10 @@
+langcode: nl
+status: true
+dependencies:
+  module:
+    - node
+id: node_unpublish_action
+label: 'Publicatie ongedaan maken'
+type: node
+plugin: node_unpublish_action
+configuration: {  }

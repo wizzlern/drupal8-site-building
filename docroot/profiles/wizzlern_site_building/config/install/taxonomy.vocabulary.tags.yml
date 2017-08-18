@@ -1,0 +1,8 @@
+langcode: nl
+status: true
+dependencies: {  }
+name: Labels
+vid: tags
+description: 'Gebruik tags om artikelen over vergelijkbare onderwerpen in categorieën te groeperen.'
+hierarchy: 0
+weight: 0

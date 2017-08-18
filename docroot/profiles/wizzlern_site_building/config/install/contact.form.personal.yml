@@ -1,0 +1,8 @@
+langcode: nl
+status: true
+dependencies: {  }
+id: personal
+label: 'Persoonlijk contactformulier'
+recipients: {  }
+reply: ''
+weight: 0

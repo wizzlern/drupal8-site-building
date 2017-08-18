@@ -1,0 +1,10 @@
+session:
+  parameter: language
+url:
+  source: path_prefix
+  prefixes:
+    nl: ''
+  domains:
+    nl: ''
+selected_langcode: site_default
+langcode: nl

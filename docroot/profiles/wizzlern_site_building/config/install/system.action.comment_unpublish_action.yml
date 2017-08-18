@@ -1,0 +1,10 @@
+langcode: nl
+status: true
+dependencies:
+  module:
+    - comment
+id: comment_unpublish_action
+label: 'Reactie intrekken'
+type: comment
+plugin: comment_unpublish_action
+configuration: {  }

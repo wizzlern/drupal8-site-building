@@ -1,0 +1,10 @@
+langcode: nl
+status: true
+dependencies: {  }
+name: Artikel
+type: article
+description: 'Gebruik <em>artikelen</em> voor tijdsgebonden inhoud zoals nieuws, persberichten of blog-berichten.'
+help: ''
+new_revision: false
+preview_mode: 1
+display_submitted: true

@@ -1,0 +1,7 @@
+langcode: nl
+status: true
+dependencies: {  }
+id: html_date
+label: 'HTML datum'
+locked: true
+pattern: Y-m-d

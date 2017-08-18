@@ -1,0 +1,7 @@
+langcode: nl
+status: true
+dependencies: {  }
+id: account
+label: Gebruikersmenu
+description: 'Links related to the active user account'
+locked: true

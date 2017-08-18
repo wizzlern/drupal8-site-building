@@ -1,0 +1,10 @@
+langcode: nl
+status: true
+dependencies:
+  module:
+    - node
+id: node_delete_action
+label: 'Inhoud verwijderen'
+type: node
+plugin: node_delete_action
+configuration: {  }

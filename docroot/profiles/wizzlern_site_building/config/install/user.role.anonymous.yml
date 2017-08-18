@@ -1,0 +1,12 @@
+langcode: nl
+status: true
+dependencies: {  }
+id: anonymous
+label: 'Anonieme gebruiker'
+weight: 0
+is_admin: false
+permissions:
+  - 'access content'
+  - 'access comments'
+  - 'access site-wide contact form'
+  - 'search content'

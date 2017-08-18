@@ -1,0 +1,9 @@
+langcode: nl
+status: false
+dependencies:
+  module:
+    - node
+id: node.full
+label: 'Volledige inhoud'
+targetEntityType: node
+cache: true

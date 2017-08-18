@@ -1,0 +1,7 @@
+langcode: nl
+status: true
+dependencies: {  }
+id: tools
+label: Hulpmiddelen
+description: 'User tool links, often added by modules'
+locked: true

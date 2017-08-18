@@ -1,0 +1,10 @@
+langcode: nl
+status: true
+dependencies:
+  module:
+    - comment
+id: comment_save_action
+label: 'Reactie opslaan'
+type: comment
+plugin: comment_save_action
+configuration: {  }

@@ -1,0 +1,9 @@
+langcode: nl
+status: false
+dependencies:
+  module:
+    - comment
+id: comment.full
+label: 'Volledige reactie'
+targetEntityType: comment
+cache: true
