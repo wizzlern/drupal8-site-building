@@ -1,8 +1,4 @@
 <?php
-/**
- * @file
- * Contains \Drupal\ctools\Plugin\Condition\EntityBundle.
- */
 
 namespace Drupal\ctools\Plugin\Condition;
 
@@ -83,7 +79,7 @@ class EntityBundle extends ConditionPluginBase implements ConstraintConditionInt
       $options[$id] = $info['label'];
     }
     $form['bundles'] = array(
-      '#title' => $this->bundleOf->getBundleLabel(),
+      '#title' => $this->pluginDefinition['label'],
       '#type' => 'checkboxes',
       '#options' => $options,
       '#default_value' => $this->configuration['bundles'],

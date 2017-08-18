@@ -21,15 +21,15 @@
     },
     "require-dev": {
         "doctrine/common": "~2.3",
-        "symfony/http-foundation": "~2.1",
-        "symfony/intl": "~2.4",
-        "symfony/yaml": "~2.0,>=2.0.5",
+        "symfony/http-foundation": "~2.3",
+        "symfony/intl": "~2.7.25|^2.8.18",
+        "symfony/yaml": "^2.0.5",
         "symfony/config": "~2.2",
         "symfony/property-access": "~2.3",
         "symfony/expression-language": "~2.4",
         "doctrine/annotations": "~1.0",
         "doctrine/cache": "~1.0",
-        "egulias/email-validator": "~1.2,>=1.2.1"
+        "egulias/email-validator": "^1.2.1"
     },
     "suggest": {
         "doctrine/annotations": "For using the annotation mapping. You will also need doctrine/cache.",
@@ -43,7 +43,10 @@
         "symfony/expression-language": "For using the 2.4 Expression validator"
     },
     "autoload": {
-        "psr-4": { "Symfony\\Component\\Validator\\": "" }
+        "psr-4": { "Symfony\\Component\\Validator\\": "" },
+        "exclude-from-classmap": [
+            "/Tests/"
+        ]
     },
     "minimum-stability": "dev",
     "extra": {

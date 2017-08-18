@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\pathauto\Tests\PathautoNodeWebTest.
- */
-
 namespace Drupal\pathauto\Tests;
 use Drupal\pathauto\Entity\PathautoPattern;
 use Drupal\node\Entity\Node;
@@ -25,7 +20,7 @@ class PathautoNodeWebTest extends WebTestBase {
    *
    * @var array
    */
-  public static $modules = array('node', 'pathauto', 'views');
+  public static $modules = array('node', 'pathauto', 'views', 'taxonomy', 'pathauto_views_test');
 
   /**
    * Admin user.
@@ -56,7 +51,6 @@ class PathautoNodeWebTest extends WebTestBase {
     $this->drupalLogin($this->adminUser);
 
     $this->createPattern('node', '/content/[node:title]');
-
   }
 
   /**
@@ -88,8 +82,8 @@ class PathautoNodeWebTest extends WebTestBase {
       'path[0][pathauto]' => FALSE,
       'path[0][alias]' => $manual_alias,
     );
-    $this->drupalPostForm($node->urlInfo('edit-form'), $edit, t('Save and keep published'));
-    $this->assertRaw(t('@type %title has been updated.', array('@type' => 'page', '%title' => $title)));
+    $this->drupalPostForm($node->toUrl('edit-form'), $edit, t('Save and keep published'));
+    $this->assertText(t('@type @title has been updated.', array('@type' => 'page', '@title' => $title)));
 
     // Check that the automatic alias checkbox is now unchecked by default.
     $this->drupalGet("node/{$node->id()}/edit");
@@ -98,7 +92,7 @@ class PathautoNodeWebTest extends WebTestBase {
 
     // Submit the node form with the default values.
     $this->drupalPostForm(NULL, array('path[0][pathauto]' => FALSE), t('Save and keep published'));
-    $this->assertRaw(t('@type %title has been updated.', array('@type' => 'page', '%title' => $title)));
+    $this->assertText(t('@type @title has been updated.', array('@type' => 'page', '@title' => $title)));
 
     // Test that the old (automatic) alias has been deleted and only accessible
     // through the new (manual) alias.
@@ -140,7 +134,7 @@ class PathautoNodeWebTest extends WebTestBase {
     $node = $this->drupalGetNodeByTitle($edit['title']);
 
     // Pathauto checkbox should still not exist.
-    $this->drupalGet($node->urlInfo('edit-form'));
+    $this->drupalGet($node->toUrl('edit-form'));
     $this->assertNoFieldById('edit-path-0-pathauto');
     $this->assertFieldByName('path[0][alias]', '');
     $this->assertNoEntityAlias($node);
@@ -156,15 +150,22 @@ class PathautoNodeWebTest extends WebTestBase {
     // Delete all current URL aliases.
     $this->deleteAllAliases();
 
+    $this->drupalGet('admin/content');
+
+    // Check which of the two nodes is first.
+    if (strpos($this->getTextContent(), 'node1') < strpos($this->getTextContent(), 'node2')) {
+      $index = 0;
+    }
+    else {
+      $index = 1;
+    }
+
     $edit = array(
       'action' => 'pathauto_update_alias_node',
-      // @todo - here we expect the $node1 to be at 0 position, any better way?
-      'node_bulk_form[0]' => TRUE,
+      'node_bulk_form[' . $index . ']' => TRUE,
     );
-    $this->drupalPostForm('admin/content', $edit, t('Apply'));
-    $this->assertRaw(\Drupal::translation()->formatPlural(1, '%action was applied to @count item.', '%action was applied to @count items.', array(
-      '%action' => 'Update URL-Alias',
-    )));
+    $this->drupalPostForm(NULL, $edit, t('Apply to selected items'));
+    $this->assertText('Update URL alias was applied to 1 item.');
 
     $this->assertEntityAlias($node1, '/content/' . $node1->getTitle());
     $this->assertEntityAlias($node2, '/node/' . $node2->id());
@@ -192,7 +193,7 @@ class PathautoNodeWebTest extends WebTestBase {
     $node->save();
 
     // Ensure that the pathauto field was saved to the database.
-    \Drupal::entityManager()->getStorage('node')->resetCache();
+    \Drupal::entityTypeManager()->getStorage('node')->resetCache();
     $node = Node::load($node->id());
     $this->assertIdentical($node->path->pathauto, PathautoState::SKIP);
 
@@ -233,13 +234,13 @@ class PathautoNodeWebTest extends WebTestBase {
     $this->assertNoEntityAliasExists($node, '/content/node-version-three');
 
     // Programatically save the node with an automatic alias.
-    \Drupal::entityManager()->getStorage('node')->resetCache();
+    \Drupal::entityTypeManager()->getStorage('node')->resetCache();
     $node = Node::load($node->id());
     $node->path->pathauto = PathautoState::CREATE;
     $node->save();
 
     // Ensure that the pathauto field was saved to the database.
-    \Drupal::entityManager()->getStorage('node')->resetCache();
+    \Drupal::entityTypeManager()->getStorage('node')->resetCache();
     $node = Node::load($node->id());
     $this->assertIdentical($node->path->pathauto, PathautoState::CREATE);
 
@@ -251,6 +252,41 @@ class PathautoNodeWebTest extends WebTestBase {
 
     $node->delete();
     $this->assertNull(\Drupal::keyValue('pathauto_state.node')->get($node->id()), 'Pathauto state was deleted');
+  }
+
+
+  /**
+   * Tests that nodes without a Pathauto pattern can set custom aliases.
+   */
+  public function testCustomAliasWithoutPattern() {
+    // First, delete all patterns to be sure that there will be no match.
+    $entity_ids = \Drupal::entityQuery('pathauto_pattern')->execute();
+    $entities = PathautoPattern::loadMultiple($entity_ids);
+    foreach ($entities as $entity) {
+      $entity->delete();
+    }
+
+    // Next, create a node with a custom alias.
+    $edit = [
+      'title[0][value]' => 'Sample article',
+      'path[0][alias]' => '/sample-article',
+    ];
+    $this->drupalPostForm('node/add/article', $edit, t('Save and publish'));
+    $this->assertText(t('article Sample article has been created.'));
+
+    // Test the alias.
+    $this->assertAliasExists(array('alias' => '/sample-article'));
+    $this->drupalGet('sample-article');
+    $this->assertResponse(200, 'A node without a pattern can have a custom alias.');
+
+    // Now create a node through the API.
+    $node = Node::create(['type' => 'article', 'title' => 'Sample article API', 'path' => ['alias' => '/sample-article-api']]);
+    $node->save();
+
+    // Test the alias.
+    $this->assertAliasExists(['alias' => '/sample-article-api']);
+    $this->drupalGet('sample-article-api');
+    $this->assertResponse(200);
   }
 
 }

@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\pathauto\Tests\PathautoLocaleTest.
- */
-
 namespace Drupal\pathauto\Tests;
 
 use Drupal\Core\Language\Language;
@@ -83,9 +78,9 @@ class PathautoLocaleTest extends WebTestBase {
     // specifying a language.
     $node = $this->drupalCreateNode(array('title' => 'English node', 'langcode' => LanguageInterface::LANGCODE_NOT_SPECIFIED));
 
-    // Check that the new node had a unique alias generated with the '-1'
+    // Check that the new node had a unique alias generated with the '-0'
     // suffix.
-    $this->assertEntityAlias($node, '/content/english-node-1', LanguageInterface::LANGCODE_NOT_SPECIFIED);
+    $this->assertEntityAlias($node, '/content/english-node-0', LanguageInterface::LANGCODE_NOT_SPECIFIED);
   }
 
   /**
@@ -100,14 +95,7 @@ class PathautoLocaleTest extends WebTestBase {
     );
     $this->drupalPostForm('admin/config/regional/language/add', $edit, t('Add language'));
 
-    // Enable content translation on articles.
-    $this->drupalGet('admin/config/regional/content-language');
-    $edit = array(
-      'entity_types[node]' => TRUE,
-      'settings[node][article][translatable]' => TRUE,
-      'settings[node][article][settings][language][language_alterable]' => TRUE,
-    );
-    $this->drupalPostForm(NULL, $edit, t('Save configuration'));
+    $this->enableArticleTranslation();
 
     // Create a pattern for English articles.
     $this->drupalGet('admin/config/search/path/patterns/add');
@@ -171,6 +159,43 @@ class PathautoLocaleTest extends WebTestBase {
     $this->assertText(t('Generated 2 URL aliases.'));
     $this->assertAlias('/node/' . $english_node->id(), '/the-articles/english-node', 'en');
     $this->assertAlias('/node/' . $french_node->id(), '/les-articles/french-node', 'fr');
+  }
+
+  /**
+   * Tests the alias created for a node with language Not Applicable.
+   */
+  public function testLanguageNotApplicable() {
+    $this->drupalLogin($this->rootUser);
+    $this->enableArticleTranslation();
+
+    // Create a pattern for nodes.
+    $pattern = $this->createPattern('node', '/content/[node:title]', -1);
+    $pattern->save();
+
+    // Create a node with language Not Applicable.
+    $node = $this->createNode(['type' => 'article', 'title' => 'Test node', 'langcode' => LanguageInterface::LANGCODE_NOT_APPLICABLE]);
+
+    // Check that the generated alias has language Not Specified.
+    $alias = \Drupal::service('pathauto.alias_storage_helper')->loadBySource('/node/' . $node->id());
+    $this->assertEqual($alias['langcode'], LanguageInterface::LANGCODE_NOT_SPECIFIED, 'PathautoGenerator::createEntityAlias() adjusts the alias langcode from Not Applicable to Not Specified.');
+
+    // Check that the alias works.
+    $this->drupalGet('content/test-node');
+    $this->assertResponse(200);
+  }
+
+  /**
+   * Enables content translation on articles.
+   */
+  protected function enableArticleTranslation() {
+    // Enable content translation on articles.
+    $this->drupalGet('admin/config/regional/content-language');
+    $edit = array(
+      'entity_types[node]' => TRUE,
+      'settings[node][article][translatable]' => TRUE,
+      'settings[node][article][settings][language][language_alterable]' => TRUE,
+    );
+    $this->drupalPostForm(NULL, $edit, t('Save configuration'));
   }
 
 }

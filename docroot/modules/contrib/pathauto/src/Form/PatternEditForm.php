@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\pathauto\Form\PatternEditForm.
- */
-
 namespace Drupal\pathauto\Form;
 
 use Drupal\Core\Entity\EntityForm;
@@ -12,8 +7,6 @@ use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
-use Drupal\Core\Plugin\Context\Context;
-use Drupal\Core\Plugin\Context\ContextDefinition;
 use Drupal\pathauto\AliasTypeManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -73,7 +66,7 @@ class PatternEditForm extends EntityForm {
     $this->manager = $manager;
     $this->entityTypeBundleInfo = $entity_type_bundle_info;
     $this->entityTypeManager = $entity_type_manager;
-    $this->languageManager= $language_manager;
+    $this->languageManager = $language_manager;
   }
 
   /**
@@ -82,7 +75,7 @@ class PatternEditForm extends EntityForm {
   public function buildForm(array $form, FormStateInterface $form_state) {
 
     $options = [];
-    foreach ($this->manager->getDefinitions() as $plugin_id => $plugin_definition) {
+    foreach ($this->manager->getVisibleDefinitions() as $plugin_id => $plugin_definition) {
       $options[$plugin_id] = $plugin_definition['label'];
     }
     $form['type'] = [
@@ -118,10 +111,11 @@ class PatternEditForm extends EntityForm {
         '#default_value' => $this->entity->getPattern(),
         '#size' => 65,
         '#maxlength' => 1280,
-        '#element_validate' => array('token_element_validate'),
+        '#element_validate' => array('token_element_validate', 'pathauto_pattern_validate'),
         '#after_build' => array('token_element_validate'),
         '#token_types' => $alias_type->getTokenTypes(),
         '#min_tokens' => 1,
+        '#required' => TRUE,
       );
 
       // Show the token help relevant to this pattern type.
@@ -136,7 +130,7 @@ class PatternEditForm extends EntityForm {
         $default_bundles = [];
         $default_languages = [];
         foreach ($this->entity->getSelectionConditions() as $condition_id => $condition) {
-          if ($condition->getPluginId() == 'entity_bundle:' . $entity_type->id()) {
+          if (in_array($condition->getPluginId(), ['entity_bundle:' . $entity_type->id(), 'node_type'])) {
             $default_bundles = $condition->getConfiguration()['bundles'];
           }
           elseif ($condition->getPluginId() == 'language') {
@@ -154,7 +148,7 @@ class PatternEditForm extends EntityForm {
             '#type' => 'checkboxes',
             '#options' => $bundle_options,
             '#default_value' => $default_bundles,
-            '#description' => t('Check to which types this pattern should be applied. Leave empty to allow any.'),
+            '#description' => $this->t('Check to which types this pattern should be applied. Leave empty to allow any.'),
           );
         }
 
@@ -168,7 +162,7 @@ class PatternEditForm extends EntityForm {
             '#type' => 'checkboxes',
             '#options' => $language_options,
             '#default_value' => $default_languages,
-            '#description' => t('Check to which languages this pattern should be applied. Leave empty to allow any.'),
+            '#description' => $this->t('Check to which languages this pattern should be applied. Leave empty to allow any.'),
           );
         }
       }
@@ -180,6 +174,7 @@ class PatternEditForm extends EntityForm {
       '#maxlength' => 255,
       '#default_value' => $this->entity->label(),
       '#required' => TRUE,
+      '#description' => $this->t('A short name to help you identify this pattern in the patterns list.'),
     );
 
     $form['id'] = array(
@@ -194,6 +189,12 @@ class PatternEditForm extends EntityForm {
       ),
     );
 
+    $form['status'] = [
+      '#title' => $this->t('Enabled'),
+      '#type' => 'checkbox',
+      '#default_value' => $this->entity->status(),
+    ];
+
     return parent::buildForm($form, $form_state);
   }
 
@@ -204,6 +205,7 @@ class PatternEditForm extends EntityForm {
     /** @var \Drupal\pathauto\PathautoPatternInterface $entity */
     $entity = parent::buildEntity($form, $form_state);
 
+    // Will only be used for new patterns.
     $default_weight = 0;
 
     $alias_type = $entity->getAliasType();
@@ -211,17 +213,17 @@ class PatternEditForm extends EntityForm {
       $entity_type = $alias_type->getDerivativeId();
       // First, remove bundle and language conditions.
       foreach ($entity->getSelectionConditions() as $condition_id => $condition) {
-
-        if ($condition->getPluginId() == 'entity_bundle:' . $entity_type || $condition->getPluginId() == 'language') {
+        if (in_array($condition->getPluginId(), ['entity_bundle:' . $entity_type, 'node_type', 'language'])) {
           $entity->removeSelectionCondition($condition_id);
         }
       }
 
       if ($bundles = array_filter((array) $form_state->getValue('bundles'))) {
         $default_weight -= 5;
+        $plugin_id = $entity_type == 'node' ? 'node_type' : 'entity_bundle:' . $entity_type;
         $entity->addSelectionCondition(
           [
-            'id' => 'entity_bundle:' . $entity_type,
+            'id' => $plugin_id,
             'bundles' => $bundles,
             'negate' => FALSE,
             'context_mapping' => [
@@ -244,14 +246,14 @@ class PatternEditForm extends EntityForm {
             ]
           ]
         );
-        $new_definition = new ContextDefinition('language', 'Language');
-        $new_context = new Context($new_definition);
-        $entity->addContext($language_mapping, $new_context);
+        $entity->addRelationship($language_mapping, t('Language'));
       }
 
     }
 
-    $entity->setWeight($default_weight);
+    if ($entity->isNew()) {
+      $entity->setWeight($default_weight);
+    }
 
     return $entity;
   }
