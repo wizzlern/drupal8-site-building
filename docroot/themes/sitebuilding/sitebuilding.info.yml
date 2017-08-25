@@ -5,7 +5,7 @@ base theme: fortytwo
 core: 8.x
 
 libraries:
-  - dtd2016sitebuilding/main
+  - sitebuilding/main
 
 stylesheets-remove:
   - '@fortytwo/static/css/fortytwo.css'

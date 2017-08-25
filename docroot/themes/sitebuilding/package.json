@@ -1,7 +1,7 @@
 {
-  "name": "dtd2016sitebuilding",
+  "name": "sitebuilding",
   "version": "8.0.0",
-  "description": "dtd2016sitebuilding subtheme of fortytwo",
+  "description": "sitebuilding subtheme of fortytwo",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "postinstall": "find node_modules/ -name '*.info' -type f -delete"

@@ -1,4 +1,4 @@
-# Styleguide for the dtd2016sitebuilding theme
+# Styleguide for the sitebuilding theme
 
 ![Logo](../static/images/fortytwo_logo.svg "Logo")
 
@@ -12,11 +12,11 @@
 
 ## About this Styleguide
 
-This styleguide for the dtd2016sitebuilding Drupal theme is generated with `KSS`, a
+This styleguide for the sitebuilding Drupal theme is generated with `KSS`, a
 stylesheet parser,
 [Spec available](https://github.com/kss-node/kss/blob/spec/SPEC.md).
 
-The dtd2016sitebuilding theme is a subtheme based on
+The sitebuilding theme is a subtheme based on
 [FortyTwo](https://www.drupal.org/project/fortytwo).
 To add items to this styleguide just add comments in your SASS file and
 regenerate this styleguide by running `grunt styleguide` from the static folder.
@@ -44,7 +44,7 @@ Style guide: components.button
 </code></pre>
 
 *The contents of this file can be changed by editing the `styleguide.md` markdown
-file found in the `static/sass` directory of the dtd2016sitebuilding drupal theme.*
+file found in the `static/sass` directory of the sitebuilding drupal theme.*
 
 **For more information on how to write KSS comments, see the
 [KSS spec](https://github.com/kss-node/kss/blob/spec/SPEC.md).**
