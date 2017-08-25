@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\drupal_system_listing_compatible_test\Tests\SystemListingCompatibleTest.
- */
-
 namespace Drupal\drupal_system_listing_compatible_test\Tests;
 
 use Drupal\simpletest\WebTestBase;
@@ -25,7 +20,7 @@ class SystemListingCompatibleTest extends WebTestBase {
    *
    * @var array
    */
-  public static $modules = array('drupal_system_listing_compatible_test');
+  public static $modules = ['drupal_system_listing_compatible_test'];
 
   /**
    * Use the Minimal profile.
@@ -40,7 +35,8 @@ class SystemListingCompatibleTest extends WebTestBase {
   /**
    * Non-empty test* method required to executed the test case class.
    */
-  function testSystemListing() {
+  public function testSystemListing() {
     $this->pass(__CLASS__ . ' test executed.');
   }
+
 }

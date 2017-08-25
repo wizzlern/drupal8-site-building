@@ -1,13 +1,9 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\comment\Tests\Views\CommentFieldFilterTest.
- */
-
 namespace Drupal\comment\Tests\Views;
 
 use Drupal\language\Entity\ConfigurableLanguage;
+use Drupal\comment\Entity\Comment;
 
 /**
  * Tests comment field filters with translations.
@@ -19,23 +15,23 @@ class CommentFieldFilterTest extends CommentTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = array('language');
+  public static $modules = ['language'];
 
   /**
    * Views used by this test.
    *
    * @var array
    */
-  public static $testViews = array('test_field_filters');
+  public static $testViews = ['test_field_filters'];
 
   /**
    * List of comment titles by language.
    *
    * @var array
    */
-  public $commentTitles = array();
+  public $commentTitles = [];
 
-  function setUp() {
+  public function setUp() {
     parent::setUp();
     $this->drupalLogin($this->drupalCreateUser(['access comments']));
 
@@ -44,15 +40,15 @@ class CommentFieldFilterTest extends CommentTestBase {
     ConfigurableLanguage::createFromLangcode('es')->save();
 
     // Set up comment titles.
-    $this->commentTitles = array(
+    $this->commentTitles = [
       'en' => 'Food in Paris',
       'es' => 'Comida en Paris',
       'fr' => 'Nouriture en Paris',
-    );
+    ];
 
     // Create a new comment. Using the one created earlier will not work,
     // as it predates the language set-up.
-    $comment = array(
+    $comment = [
       'uid' => $this->loggedInUser->id(),
       'entity_id' => $this->nodeUserCommented->id(),
       'entity_type' => 'node',
@@ -60,16 +56,16 @@ class CommentFieldFilterTest extends CommentTestBase {
       'cid' => '',
       'pid' => '',
       'node_type' => '',
-    );
-    $this->comment = entity_create('comment', $comment);
+    ];
+    $this->comment = Comment::create($comment);
 
     // Add field values and translate the comment.
     $this->comment->subject->value = $this->commentTitles['en'];
     $this->comment->comment_body->value = $this->commentTitles['en'];
     $this->comment->langcode = 'en';
     $this->comment->save();
-    foreach (array('es', 'fr') as $langcode) {
-      $translation = $this->comment->addTranslation($langcode, array());
+    foreach (['es', 'fr'] as $langcode) {
+      $translation = $this->comment->addTranslation($langcode, []);
       $translation->comment_body->value = $this->commentTitles[$langcode];
       $translation->subject->value = $this->commentTitles[$langcode];
     }
@@ -82,19 +78,19 @@ class CommentFieldFilterTest extends CommentTestBase {
   public function testFilters() {
     // Test the title filter page, which filters for title contains 'Comida'.
     // Should show just the Spanish translation, once.
-    $this->assertPageCounts('test-title-filter', array('es' => 1, 'fr' => 0, 'en' => 0), 'Comida title filter');
+    $this->assertPageCounts('test-title-filter', ['es' => 1, 'fr' => 0, 'en' => 0], 'Comida title filter');
 
     // Test the body filter page, which filters for body contains 'Comida'.
     // Should show just the Spanish translation, once.
-    $this->assertPageCounts('test-body-filter', array('es' => 1, 'fr' => 0, 'en' => 0), 'Comida body filter');
+    $this->assertPageCounts('test-body-filter', ['es' => 1, 'fr' => 0, 'en' => 0], 'Comida body filter');
 
     // Test the title Paris filter page, which filters for title contains
     // 'Paris'. Should show each translation once.
-    $this->assertPageCounts('test-title-paris', array('es' => 1, 'fr' => 1, 'en' => 1), 'Paris title filter');
+    $this->assertPageCounts('test-title-paris', ['es' => 1, 'fr' => 1, 'en' => 1], 'Paris title filter');
 
     // Test the body Paris filter page, which filters for body contains
     // 'Paris'. Should show each translation once.
-    $this->assertPageCounts('test-body-paris', array('es' => 1, 'fr' => 1, 'en' => 1), 'Paris body filter');
+    $this->assertPageCounts('test-body-paris', ['es' => 1, 'fr' => 1, 'en' => 1], 'Paris body filter');
   }
 
   /**
@@ -120,4 +116,5 @@ class CommentFieldFilterTest extends CommentTestBase {
       $this->assertEqual(substr_count($text, $this->commentTitles[$langcode]), 2 * $count, 'Translation ' . $langcode . ' has count ' . $count . ' with ' . $message);
     }
   }
+
 }

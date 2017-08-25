@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Core\Database\Query\Truncate.
- */
-
 namespace Drupal\Core\Database\Query;
 
 use Drupal\Core\Database\Database;
@@ -33,7 +28,7 @@ class Truncate extends Query {
    * @param array $options
    *   Array of database options.
    */
-  public function __construct(Connection $connection, $table, array $options = array()) {
+  public function __construct(Connection $connection, $table, array $options = []) {
     $options['return'] = Database::RETURN_AFFECTED;
     parent::__construct($connection, $options);
     $this->table = $table;
@@ -60,7 +55,7 @@ class Truncate extends Query {
    *   Return value is dependent on the database type.
    */
   public function execute() {
-    return $this->connection->query((string) $this, array(), $this->queryOptions);
+    return $this->connection->query((string) $this, [], $this->queryOptions);
   }
 
   /**
@@ -85,4 +80,5 @@ class Truncate extends Query {
       return $comments . 'TRUNCATE {' . $this->connection->escapeTable($this->table) . '} ';
     }
   }
+
 }

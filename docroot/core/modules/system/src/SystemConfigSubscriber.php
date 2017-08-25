@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\system\SystemConfigSubscriber.
- */
-
 namespace Drupal\system;
 
 use Drupal\Core\Config\ConfigCrudEvent;
@@ -86,11 +81,12 @@ class SystemConfigSubscriber implements EventSubscriberInterface {
    * {@inheritdoc}
    */
   public static function getSubscribedEvents() {
-    $events[ConfigEvents::SAVE][] = array('onConfigSave', 0);
-    // The empty check has a high priority so that is can stop propagation if
+    $events[ConfigEvents::SAVE][] = ['onConfigSave', 0];
+    // The empty check has a high priority so that it can stop propagation if
     // there is no configuration to import.
-    $events[ConfigEvents::IMPORT_VALIDATE][] = array('onConfigImporterValidateNotEmpty', 512);
-    $events[ConfigEvents::IMPORT_VALIDATE][] = array('onConfigImporterValidateSiteUUID', 256);
+    $events[ConfigEvents::IMPORT_VALIDATE][] = ['onConfigImporterValidateNotEmpty', 512];
+    $events[ConfigEvents::IMPORT_VALIDATE][] = ['onConfigImporterValidateSiteUUID', 256];
     return $events;
   }
+
 }

@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\config\Tests\ConfigImportAllTest.
- */
-
 namespace Drupal\config\Tests;
 
 use Drupal\Core\Config\StorageComparer;
@@ -41,7 +36,7 @@ class ConfigImportAllTest extends ModuleTestBase {
   protected function setUp() {
     parent::setUp();
 
-    $this->webUser = $this->drupalCreateUser(array('synchronize configuration'));
+    $this->webUser = $this->drupalCreateUser(['synchronize configuration']);
     $this->drupalLogin($this->webUser);
   }
 
@@ -65,7 +60,7 @@ class ConfigImportAllTest extends ModuleTestBase {
     \Drupal::service('module_installer')->install(array_keys($all_modules));
 
     $this->assertModules(array_keys($all_modules), TRUE);
-    foreach($all_modules as $module => $info) {
+    foreach ($all_modules as $module => $info) {
       $this->assertModuleConfig($module);
       $this->assertModuleTablesExist($module);
     }
@@ -123,22 +118,22 @@ class ConfigImportAllTest extends ModuleTestBase {
     \Drupal::service('module_installer')->uninstall(array_keys($modules_to_uninstall));
 
     $this->assertModules(array_keys($modules_to_uninstall), FALSE);
-    foreach($modules_to_uninstall as $module => $info) {
+    foreach ($modules_to_uninstall as $module => $info) {
       $this->assertNoModuleConfig($module);
       $this->assertModuleTablesDoNotExist($module);
     }
 
     // Import the configuration thereby re-installing all the modules.
-    $this->drupalPostForm('admin/config/development/configuration', array(), t('Import all'));
+    $this->drupalPostForm('admin/config/development/configuration', [], t('Import all'));
     // Modules have been installed that have services.
     $this->rebuildContainer();
 
     // Check that there are no errors.
-    $this->assertIdentical($this->configImporter()->getErrors(), array());
+    $this->assertIdentical($this->configImporter()->getErrors(), []);
 
     // Check that all modules that were uninstalled are now reinstalled.
     $this->assertModules(array_keys($modules_to_uninstall), TRUE);
-    foreach($modules_to_uninstall as $module => $info) {
+    foreach ($modules_to_uninstall as $module => $info) {
       $this->assertModuleConfig($module);
       $this->assertModuleTablesExist($module);
     }
@@ -162,4 +157,5 @@ class ConfigImportAllTest extends ModuleTestBase {
       $this->assertConfigSchema($typed_config, $name, $config->get());
     }
   }
+
 }

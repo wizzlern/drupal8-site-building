@@ -1,14 +1,10 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Component\DependencyInjection\Container.
- */
-
 namespace Drupal\Component\DependencyInjection;
 
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\IntrospectableContainerInterface;
+use Symfony\Component\DependencyInjection\ResettableContainerInterface;
 use Symfony\Component\DependencyInjection\ScopeInterface;
 use Symfony\Component\DependencyInjection\Exception\LogicException;
 use Symfony\Component\DependencyInjection\Exception\InvalidArgumentException;
@@ -54,49 +50,49 @@ use Symfony\Component\DependencyInjection\Exception\ServiceCircularReferenceExce
  *
  * @ingroup container
  */
-class Container implements IntrospectableContainerInterface {
+class Container implements IntrospectableContainerInterface, ResettableContainerInterface {
 
   /**
    * The parameters of the container.
    *
    * @var array
    */
-  protected $parameters = array();
+  protected $parameters = [];
 
   /**
    * The aliases of the container.
    *
    * @var array
    */
-  protected $aliases = array();
+  protected $aliases = [];
 
   /**
    * The service definitions of the container.
    *
    * @var array
    */
-  protected $serviceDefinitions = array();
+  protected $serviceDefinitions = [];
 
   /**
    * The instantiated services.
    *
    * @var array
    */
-  protected $services = array();
+  protected $services = [];
 
   /**
    * The instantiated private services.
    *
    * @var array
    */
-  protected $privateServices = array();
+  protected $privateServices = [];
 
   /**
    * The currently loading services.
    *
    * @var array
    */
-  protected $loading = array();
+  protected $loading = [];
 
   /**
    * Whether the container parameters can still be changed.
@@ -120,14 +116,14 @@ class Container implements IntrospectableContainerInterface {
    *   - machine_format: Whether this container definition uses the optimized
    *     machine-readable container format.
    */
-  public function __construct(array $container_definition = array()) {
+  public function __construct(array $container_definition = []) {
     if (!empty($container_definition) && (!isset($container_definition['machine_format']) || $container_definition['machine_format'] !== TRUE)) {
       throw new InvalidArgumentException('The non-optimized format is not supported by this class. Use an optimized machine-readable format instead, e.g. as produced by \Drupal\Component\DependencyInjection\Dumper\OptimizedPhpArrayDumper.');
     }
 
-    $this->aliases = isset($container_definition['aliases']) ? $container_definition['aliases'] : array();
-    $this->parameters = isset($container_definition['parameters']) ? $container_definition['parameters'] : array();
-    $this->serviceDefinitions = isset($container_definition['services']) ? $container_definition['services'] : array();
+    $this->aliases = isset($container_definition['aliases']) ? $container_definition['aliases'] : [];
+    $this->parameters = isset($container_definition['parameters']) ? $container_definition['parameters'] : [];
+    $this->serviceDefinitions = isset($container_definition['services']) ? $container_definition['services'] : [];
     $this->frozen = isset($container_definition['frozen']) ? $container_definition['frozen'] : FALSE;
 
     // Register the service_container with itself.
@@ -182,11 +178,7 @@ class Container implements IntrospectableContainerInterface {
     }
     catch (\Exception $e) {
       unset($this->loading[$id]);
-
-      // Remove a potentially shared service that was constructed incompletely.
-      if (array_key_exists($id, $this->services)) {
-        unset($this->services[$id]);
-      }
+      unset($this->services[$id]);
 
       if (ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE !== $invalid_behavior) {
         return;
@@ -198,6 +190,17 @@ class Container implements IntrospectableContainerInterface {
     unset($this->loading[$id]);
 
     return $service;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function reset() {
+    if (!empty($this->scopedServices)) {
+      throw new LogicException('Resetting the container is not allowed when a scope is active.');
+    }
+
+    $this->services = [];
   }
 
   /**
@@ -225,7 +228,7 @@ class Container implements IntrospectableContainerInterface {
       throw new RuntimeException(sprintf('You have requested a synthetic service ("%s"). The service container does not know how to construct this service. The service will need to be set before it is first used.', $id));
     }
 
-    $arguments = array();
+    $arguments = [];
     if (isset($definition['arguments'])) {
       $arguments = $definition['arguments'];
 
@@ -235,14 +238,14 @@ class Container implements IntrospectableContainerInterface {
     }
 
     if (isset($definition['file'])) {
-      $file = $this->frozen ? $definition['file'] : current($this->resolveServicesAndParameters(array($definition['file'])));
+      $file = $this->frozen ? $definition['file'] : current($this->resolveServicesAndParameters([$definition['file']]));
       require_once $file;
     }
 
     if (isset($definition['factory'])) {
       $factory = $definition['factory'];
       if (is_array($factory)) {
-        $factory = $this->resolveServicesAndParameters(array($factory[0], $factory[1]));
+        $factory = $this->resolveServicesAndParameters([$factory[0], $factory[1]]);
       }
       elseif (!is_string($factory)) {
         throw new RuntimeException(sprintf('Cannot create service "%s" because of invalid factory', $id));
@@ -251,7 +254,7 @@ class Container implements IntrospectableContainerInterface {
       $service = call_user_func_array($factory, $arguments);
     }
     else {
-      $class = $this->frozen ? $definition['class'] : current($this->resolveServicesAndParameters(array($definition['class'])));
+      $class = $this->frozen ? $definition['class'] : current($this->resolveServicesAndParameters([$definition['class']]));
       $length = isset($definition['arguments_count']) ? $definition['arguments_count'] : count($arguments);
 
       // Optimize class instantiation for services with up to 10 parameters as
@@ -319,14 +322,14 @@ class Container implements IntrospectableContainerInterface {
     if (isset($definition['calls'])) {
       foreach ($definition['calls'] as $call) {
         $method = $call[0];
-        $arguments = array();
+        $arguments = [];
         if (!empty($call[1])) {
           $arguments = $call[1];
           if ($arguments instanceof \stdClass) {
             $arguments = $this->resolveServicesAndParameters($arguments);
           }
         }
-        call_user_func_array(array($service, $method), $arguments);
+        call_user_func_array([$service, $method], $arguments);
       }
     }
 
@@ -359,6 +362,10 @@ class Container implements IntrospectableContainerInterface {
    * {@inheritdoc}
    */
   public function set($id, $service, $scope = ContainerInterface::SCOPE_CONTAINER) {
+    if (!in_array($scope, ['container', 'request']) || ('request' === $scope && 'request' !== $id)) {
+      @trigger_error('The concept of container scopes is deprecated since version 2.8 and will be removed in 3.0. Omit the third parameter.', E_USER_DEPRECATED);
+    }
+
     $this->services[$id] = $service;
   }
 
@@ -366,7 +373,7 @@ class Container implements IntrospectableContainerInterface {
    * {@inheritdoc}
    */
   public function has($id) {
-    return isset($this->services[$id]) || isset($this->serviceDefinitions[$id]);
+    return isset($this->aliases[$id]) || isset($this->services[$id]) || isset($this->serviceDefinitions[$id]);
   }
 
   /**
@@ -542,7 +549,7 @@ class Container implements IntrospectableContainerInterface {
    *   An array of strings with suitable alternatives.
    */
   protected function getAlternatives($search_key, array $keys) {
-    $alternatives = array();
+    $alternatives = [];
     foreach ($keys as $key) {
       $lev = levenshtein($search_key, $key);
       if ($lev <= strlen($search_key) / 3 || strpos($key, $search_key) !== FALSE) {
@@ -585,6 +592,10 @@ class Container implements IntrospectableContainerInterface {
    * {@inheritdoc}
    */
   public function enterScope($name) {
+    if ('request' !== $name) {
+      @trigger_error('The ' . __METHOD__ . ' method is deprecated since version 2.8 and will be removed in 3.0.', E_USER_DEPRECATED);
+    }
+
     throw new \BadMethodCallException(sprintf("'%s' is not supported by Drupal 8.", __FUNCTION__));
   }
 
@@ -592,6 +603,10 @@ class Container implements IntrospectableContainerInterface {
    * {@inheritdoc}
    */
   public function leaveScope($name) {
+    if ('request' !== $name) {
+      @trigger_error('The ' . __METHOD__ . ' method is deprecated since version 2.8 and will be removed in 3.0.', E_USER_DEPRECATED);
+    }
+
     throw new \BadMethodCallException(sprintf("'%s' is not supported by Drupal 8.", __FUNCTION__));
   }
 
@@ -599,6 +614,11 @@ class Container implements IntrospectableContainerInterface {
    * {@inheritdoc}
    */
   public function addScope(ScopeInterface $scope) {
+
+    $name = $scope->getName();
+    if ('request' !== $name) {
+      @trigger_error('The ' . __METHOD__ . ' method is deprecated since version 2.8 and will be removed in 3.0.', E_USER_DEPRECATED);
+    }
     throw new \BadMethodCallException(sprintf("'%s' is not supported by Drupal 8.", __FUNCTION__));
   }
 
@@ -606,6 +626,10 @@ class Container implements IntrospectableContainerInterface {
    * {@inheritdoc}
    */
   public function hasScope($name) {
+    if ('request' !== $name) {
+      @trigger_error('The ' . __METHOD__ . ' method is deprecated since version 2.8 and will be removed in 3.0.', E_USER_DEPRECATED);
+    }
+
     throw new \BadMethodCallException(sprintf("'%s' is not supported by Drupal 8.", __FUNCTION__));
   }
 
@@ -613,6 +637,8 @@ class Container implements IntrospectableContainerInterface {
    * {@inheritdoc}
    */
   public function isScopeActive($name) {
+    @trigger_error('The ' . __METHOD__ . ' method is deprecated since version 2.8 and will be removed in 3.0.', E_USER_DEPRECATED);
+
     throw new \BadMethodCallException(sprintf("'%s' is not supported by Drupal 8.", __FUNCTION__));
   }
 
@@ -624,6 +650,13 @@ class Container implements IntrospectableContainerInterface {
    */
   public function getServiceIds() {
     return array_keys($this->serviceDefinitions + $this->services);
+  }
+
+  /**
+   * Ensure that cloning doesn't work.
+   */
+  private function __clone()
+  {
   }
 
 }

@@ -1,14 +1,9 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\comment\Tests\CommentPreviewTest.
- */
-
 namespace Drupal\comment\Tests;
 
 use Drupal\comment\CommentManagerInterface;
-use Drupal\Component\Utility\SafeMarkup;
+use Drupal\Component\Render\MarkupInterface;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\comment\Entity\Comment;
 
@@ -31,7 +26,7 @@ class CommentPreviewTest extends CommentTestBase {
   /**
    * Tests comment preview.
    */
-  function testCommentPreview() {
+  public function testCommentPreview() {
     // As admin user, configure comment settings.
     $this->drupalLogin($this->adminUser);
     $this->setCommentPreview(DRUPAL_OPTIONAL);
@@ -40,13 +35,13 @@ class CommentPreviewTest extends CommentTestBase {
     $this->setCommentSettings('default_mode', CommentManagerInterface::COMMENT_MODE_THREADED, 'Comment paging changed.');
     $this->drupalLogout();
 
-    // Login as web user.
+    // Log in as web user.
     $this->drupalLogin($this->webUser);
 
     // Test escaping of the username on the preview form.
     \Drupal::service('module_installer')->install(['user_hooks_test']);
     \Drupal::state()->set('user_hooks_test_user_format_name_alter', TRUE);
-    $edit = array();
+    $edit = [];
     $edit['subject[0][value]'] = $this->randomMachineName(8);
     $edit['comment_body[0][value]'] = $this->randomMachineName(16);
     $this->drupalPostForm('node/' . $this->node->id(), $edit, t('Preview'));
@@ -54,7 +49,7 @@ class CommentPreviewTest extends CommentTestBase {
 
     \Drupal::state()->set('user_hooks_test_user_format_name_alter_safe', TRUE);
     $this->drupalPostForm('node/' . $this->node->id(), $edit, t('Preview'));
-    $this->assertTrue(SafeMarkup::isSafe($this->webUser->getDisplayName()), 'Username is marked safe');
+    $this->assertTrue($this->webUser->getDisplayName() instanceof MarkupInterface, 'Username is marked safe');
     $this->assertNoEscaped('<em>' . $this->webUser->id() . '</em>');
     $this->assertRaw('<em>' . $this->webUser->id() . '</em>');
 
@@ -91,11 +86,11 @@ class CommentPreviewTest extends CommentTestBase {
     $this->setCommentSettings('default_mode', CommentManagerInterface::COMMENT_MODE_THREADED, 'Comment paging changed.');
     $this->drupalLogout();
 
-    // Login as web user.
+    // Log in as web user.
     $this->drupalLogin($this->webUser);
 
     // As the web user, fill in the comment form and preview the comment.
-    $edit = array();
+    $edit = [];
     $edit['subject[0][value]'] = $this->randomMachineName(8);
     $edit['comment_body[0][value]'] = $this->randomMachineName(16);
     $this->drupalPostForm('node/' . $this->node->id(), $edit, t('Preview'));
@@ -128,15 +123,15 @@ class CommentPreviewTest extends CommentTestBase {
   /**
    * Tests comment edit, preview, and save.
    */
-  function testCommentEditPreviewSave() {
-    $web_user = $this->drupalCreateUser(array('access comments', 'post comments', 'skip comment approval', 'edit own comments'));
+  public function testCommentEditPreviewSave() {
+    $web_user = $this->drupalCreateUser(['access comments', 'post comments', 'skip comment approval', 'edit own comments']);
     $this->drupalLogin($this->adminUser);
     $this->setCommentPreview(DRUPAL_OPTIONAL);
     $this->setCommentForm(TRUE);
     $this->setCommentSubject(TRUE);
     $this->setCommentSettings('default_mode', CommentManagerInterface::COMMENT_MODE_THREADED, 'Comment paging changed.');
 
-    $edit = array();
+    $edit = [];
     $date = new DrupalDateTime('2008-03-02 17:23');
     $edit['subject[0][value]'] = $this->randomMachineName(8);
     $edit['comment_body[0][value]'] = $this->randomMachineName(16);
@@ -177,7 +172,7 @@ class CommentPreviewTest extends CommentTestBase {
     $this->assertFieldByName('date[time]', $expected_form_time, 'Time field displayed.');
 
     // Submit the form using the displayed values.
-    $displayed = array();
+    $displayed = [];
     $displayed['subject[0][value]'] = (string) current($this->xpath("//input[@id='edit-subject-0-value']/@value"));
     $displayed['comment_body[0][value]'] = (string) current($this->xpath("//textarea[@id='edit-comment-body-0-value']"));
     $displayed['uid'] = (string) current($this->xpath("//input[@id='edit-uid']/@value"));
@@ -187,7 +182,7 @@ class CommentPreviewTest extends CommentTestBase {
 
     // Check that the saved comment is still correct.
     $comment_storage = \Drupal::entityManager()->getStorage('comment');
-    $comment_storage->resetCache(array($comment->id()));
+    $comment_storage->resetCache([$comment->id()]);
     /** @var \Drupal\comment\CommentInterface $comment_loaded */
     $comment_loaded = Comment::load($comment->id());
     $this->assertEqual($comment_loaded->getSubject(), $edit['subject[0][value]'], 'Subject loaded.');
@@ -198,13 +193,13 @@ class CommentPreviewTest extends CommentTestBase {
 
     // Check that the date and time of the comment are correct when edited by
     // non-admin users.
-    $user_edit = array();
+    $user_edit = [];
     $expected_created_time = $comment_loaded->getCreatedTime();
     $this->drupalLogin($web_user);
     // Web user cannot change the comment author.
     unset($edit['uid']);
     $this->drupalPostForm('comment/' . $comment->id() . '/edit', $user_edit, t('Save'));
-    $comment_storage->resetCache(array($comment->id()));
+    $comment_storage->resetCache([$comment->id()]);
     $comment_loaded = Comment::load($comment->id());
     $this->assertEqual($comment_loaded->getCreatedTime(), $expected_created_time, 'Expected date and time for comment edited.');
     $this->drupalLogout();

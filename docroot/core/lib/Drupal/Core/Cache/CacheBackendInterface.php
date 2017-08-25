@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Core\Cache\CacheBackendInterface.
- */
-
 namespace Drupal\Core\Cache;
 
 /**
@@ -101,7 +96,7 @@ interface CacheBackendInterface {
    * @see \Drupal\Core\Cache\CacheBackendInterface::get()
    * @see \Drupal\Core\Cache\CacheBackendInterface::getMultiple()
    */
-  public function set($cid, $data, $expire = Cache::PERMANENT, array $tags = array());
+  public function set($cid, $data, $expire = Cache::PERMANENT, array $tags = []);
 
   /**
    * Store multiple items in the persistent cache.
@@ -220,4 +215,5 @@ interface CacheBackendInterface {
    * Remove a cache bin.
    */
   public function removeBin();
+
 }

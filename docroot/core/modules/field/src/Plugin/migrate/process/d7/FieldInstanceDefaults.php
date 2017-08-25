@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\field\Plugin\migrate\process\d7\FieldInstanceDefaults.
- */
-
 namespace Drupal\field\Plugin\migrate\process\d7;
 
 use Drupal\migrate\MigrateExecutableInterface;
@@ -25,7 +20,7 @@ class FieldInstanceDefaults extends ProcessPluginBase {
     list($default_value, $widget_settings) = $value;
     $widget_type = $widget_settings['type'];
 
-    $default = array();
+    $default = [];
 
     foreach ($default_value as $item) {
       switch ($widget_type) {

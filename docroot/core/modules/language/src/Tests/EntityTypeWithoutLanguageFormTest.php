@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\language\Tests\EntityTypeWithoutLanguageFormTest.
- */
-
 namespace Drupal\language\Tests;
 
 use Drupal\simpletest\WebTestBase;
@@ -24,10 +19,10 @@ class EntityTypeWithoutLanguageFormTest extends WebTestBase {
    *
    * @var array
    */
-  public static $modules = array(
+  public static $modules = [
     'language',
     'language_test',
-  );
+  ];
 
   /**
    * {@inheritdoc}
@@ -35,10 +30,10 @@ class EntityTypeWithoutLanguageFormTest extends WebTestBase {
   protected function setUp() {
     parent::setUp();
 
-    // Create and login administrative user.
-    $admin_user = $this->drupalCreateUser(array(
+    // Create and log in administrative user.
+    $admin_user = $this->drupalCreateUser([
       'administer languages',
-    ));
+    ]);
     $this->drupalLogin($admin_user);
   }
 

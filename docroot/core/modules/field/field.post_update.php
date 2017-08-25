@@ -5,13 +5,10 @@
  * Post update functions for Field module.
  */
 
+use Drupal\Core\Entity\Entity\EntityFormDisplay;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\field\Entity\FieldConfig;
 
-/**
- * @addtogroup updates-8.0.0-beta
- * @{
- */
 
 /**
  * Re-save all field storage config objects to add 'custom_storage' property.
@@ -42,5 +39,23 @@ function field_post_update_entity_reference_handler_setting() {
 }
 
 /**
- * @} End of "addtogroup updates-8.0.0-beta".
+ * Adds the 'size' setting for email widgets.
  */
+function field_post_update_email_widget_size_setting() {
+  foreach (EntityFormDisplay::loadMultiple() as $entity_form_display) {
+    $changed = FALSE;
+    foreach ($entity_form_display->getComponents() as $name => $options) {
+      if (isset($options['type']) && $options['type'] === 'email_default') {
+        $options['settings']['size'] = '60';
+        $entity_form_display->setComponent($name, $options);
+        $changed = TRUE;
+      }
+    }
+
+    if ($changed) {
+      $entity_form_display->save();
+    }
+  }
+
+  return t('The new size setting for email widgets has been added.');
+}

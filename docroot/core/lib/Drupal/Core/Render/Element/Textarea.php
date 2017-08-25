@@ -1,14 +1,8 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Core\Render\Element\Textarea.
- */
-
 namespace Drupal\Core\Render\Element;
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Render\Element;
 
 /**
  * Provides a form element for input of multiple-line text.
@@ -23,7 +17,7 @@ use Drupal\Core\Render\Element;
  * @code
  * $form['text'] = array(
  *   '#type' => 'textarea',
- *   '#title' => t('Text'),
+ *   '#title' => $this->t('Text'),
  * );
  * @endcode
  *
@@ -39,21 +33,21 @@ class Textarea extends FormElement {
    */
   public function getInfo() {
     $class = get_class($this);
-    return array(
+    return [
       '#input' => TRUE,
       '#cols' => 60,
       '#rows' => 5,
       '#resizable' => 'vertical',
-      '#process' => array(
-        array($class, 'processAjaxForm'),
-        array($class, 'processGroup'),
-      ),
-      '#pre_render' => array(
-        array($class, 'preRenderGroup'),
-      ),
+      '#process' => [
+        [$class, 'processAjaxForm'],
+        [$class, 'processGroup'],
+      ],
+      '#pre_render' => [
+        [$class, 'preRenderGroup'],
+      ],
       '#theme' => 'textarea',
-      '#theme_wrappers' => array('form_element'),
-    );
+      '#theme_wrappers' => ['form_element'],
+    ];
   }
 
   /**
@@ -67,4 +61,5 @@ class Textarea extends FormElement {
     }
     return NULL;
   }
+
 }

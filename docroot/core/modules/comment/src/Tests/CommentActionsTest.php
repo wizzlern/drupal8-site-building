@@ -1,13 +1,9 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\comment\Tests\CommentActionsTest.
- */
-
 namespace Drupal\comment\Tests;
 
 use Drupal\comment\Entity\Comment;
+use Drupal\system\Entity\Action;
 
 /**
  * Tests actions provided by the Comment module.
@@ -21,44 +17,44 @@ class CommentActionsTest extends CommentTestBase {
    *
    * @var array
    */
-  public static $modules = array('dblog', 'action');
+  public static $modules = ['dblog', 'action'];
 
   /**
    * Tests comment publish and unpublish actions.
    */
-  function testCommentPublishUnpublishActions() {
+  public function testCommentPublishUnpublishActions() {
     $this->drupalLogin($this->webUser);
     $comment_text = $this->randomMachineName();
     $subject = $this->randomMachineName();
     $comment = $this->postComment($this->node, $comment_text, $subject);
 
     // Unpublish a comment.
-    $action = entity_load('action', 'comment_unpublish_action');
-    $action->execute(array($comment));
+    $action = Action::load('comment_unpublish_action');
+    $action->execute([$comment]);
     $this->assertTrue($comment->isPublished() === FALSE, 'Comment was unpublished');
 
     // Publish a comment.
-    $action = entity_load('action', 'comment_publish_action');
-    $action->execute(array($comment));
+    $action = Action::load('comment_publish_action');
+    $action->execute([$comment]);
     $this->assertTrue($comment->isPublished() === TRUE, 'Comment was published');
   }
 
   /**
    * Tests the unpublish comment by keyword action.
    */
-  function testCommentUnpublishByKeyword() {
+  public function testCommentUnpublishByKeyword() {
     $this->drupalLogin($this->adminUser);
     $keyword_1 = $this->randomMachineName();
     $keyword_2 = $this->randomMachineName();
-    $action = entity_create('action', array(
+    $action = Action::create([
       'id' => 'comment_unpublish_by_keyword_action',
       'label' => $this->randomMachineName(),
       'type' => 'comment',
-      'configuration' => array(
-        'keywords' => array($keyword_1, $keyword_2),
-      ),
+      'configuration' => [
+        'keywords' => [$keyword_1, $keyword_2],
+      ],
       'plugin' => 'comment_unpublish_by_keyword_action',
-    ));
+    ]);
     $action->save();
 
     $comment = $this->postComment($this->node, $keyword_2, $this->randomMachineName());
@@ -68,7 +64,7 @@ class CommentActionsTest extends CommentTestBase {
 
     $this->assertTrue($comment->isPublished() === TRUE, 'The comment status was set to published.');
 
-    $action->execute(array($comment));
+    $action->execute([$comment]);
     $this->assertTrue($comment->isPublished() === FALSE, 'The comment status was set to not published.');
   }
 

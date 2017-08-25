@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\taxonomy\TermInterface.
- */
-
 namespace Drupal\taxonomy;
 
 use Drupal\Core\Entity\ContentEntityInterface;
@@ -90,7 +85,7 @@ interface TermInterface extends ContentEntityInterface, EntityChangedInterface {
   /**
    * Get the taxonomy vocabulary id this term belongs to.
    *
-   * @return int
+   * @return string
    *   The id of the vocabulary.
    */
   public function getVocabularyId();

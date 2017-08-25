@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\Core\Field\FieldDefinitionListenerTest.
- */
-
 namespace Drupal\Tests\Core\Field;
 
 use Drupal\Component\Plugin\Exception\PluginNotFoundException;
@@ -82,7 +77,7 @@ class FieldDefinitionListenerTest extends UnitTestCase {
    * @param \Drupal\Core\Entity\EntityTypeInterface[]|\Prophecy\Prophecy\ProphecyInterface[] $definitions
    *   (optional) An array of entity type definitions.
    */
-  protected function setUpEntityManager($definitions = array()) {
+  protected function setUpEntityManager($definitions = []) {
     $class = $this->getMockClass(EntityInterface::class);
     foreach ($definitions as $key => $entity_type) {
       // \Drupal\Core\Entity\EntityTypeInterface::getLinkTemplates() is called

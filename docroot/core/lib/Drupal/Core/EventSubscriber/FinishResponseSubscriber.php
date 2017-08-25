@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Core\EventSubscriber\FinishResponseSubscriber.
- */
-
 namespace Drupal\Core\EventSubscriber;
 
 use Drupal\Component\Datetime\DateTimePlus;
@@ -91,6 +86,21 @@ class FinishResponseSubscriber implements EventSubscriberInterface {
     $this->responsePolicy = $response_policy;
     $this->cacheContextsManager = $cache_contexts_manager;
     $this->debugCacheabilityHeaders = $http_response_debug_cacheability_headers;
+  }
+
+  /**
+   * Sets extra headers on any responses, also subrequest ones.
+   *
+   * @param \Symfony\Component\HttpKernel\Event\FilterResponseEvent $event
+   *   The event to process.
+   */
+  public function onAllResponds(FilterResponseEvent $event) {
+    $response = $event->getResponse();
+    // Always add the 'http_response' cache tag to be able to invalidate every
+    // response, for example after rebuilding routes.
+    if ($response instanceof CacheableResponseInterface) {
+      $response->getCacheableMetadata()->addCacheTags(['http_response']);
+    }
   }
 
   /**
@@ -263,7 +273,7 @@ class FinishResponseSubscriber implements EventSubscriberInterface {
    *   A response object.
    */
   protected function setCacheControlNoCache(Response $response) {
-    $response->headers->set('Cache-Control', 'no-cache, must-revalidate, post-check=0, pre-check=0');
+    $response->headers->set('Cache-Control', 'no-cache, must-revalidate');
   }
 
   /**
@@ -288,7 +298,11 @@ class FinishResponseSubscriber implements EventSubscriberInterface {
    *   An array of event listener definitions.
    */
   public static function getSubscribedEvents() {
-    $events[KernelEvents::RESPONSE][] = array('onRespond');
+    $events[KernelEvents::RESPONSE][] = ['onRespond'];
+    // There is no specific reason for choosing 16 beside it should be executed
+    // before ::onRespond().
+    $events[KernelEvents::RESPONSE][] = ['onAllResponds', 16];
     return $events;
   }
+
 }

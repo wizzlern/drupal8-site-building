@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Core\KeyValueStore\NullStorageExpirable.
- */
-
 namespace Drupal\Core\KeyValueStore;
 
 /**
@@ -17,7 +12,7 @@ class NullStorageExpirable implements KeyValueStoreExpirableInterface {
    *
    * @var array
    */
-  protected $data = array();
+  protected $data = [];
 
   /**
    * The name of the collection holding key and value pairs.
@@ -51,14 +46,14 @@ class NullStorageExpirable implements KeyValueStoreExpirableInterface {
    * {@inheritdoc}
    */
   public function getMultiple(array $keys) {
-    return array();
+    return [];
   }
 
   /**
    * {@inheritdoc}
    */
   public function getAll() {
-    return array();
+    return [];
   }
 
   /**

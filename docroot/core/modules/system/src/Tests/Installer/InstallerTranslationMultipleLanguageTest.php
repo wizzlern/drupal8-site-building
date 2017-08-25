@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\system\Tests\Installer\InstallerTranslationMultipleLanguageTest.
- */
-
 namespace Drupal\system\Tests\Installer;
 
 use Drupal\simpletest\InstallerTestBase;
@@ -121,10 +116,10 @@ ENDPO;
 
       // Activate a module, to make sure that config is not overridden by module
       // installation.
-      $edit = array(
-        'modules[Core][views][enable]' => TRUE,
-        'modules[Core][filter][enable]' => TRUE,
-      );
+      $edit = [
+        'modules[views][enable]' => TRUE,
+        'modules[filter][enable]' => TRUE,
+      ];
       $this->drupalPostForm('admin/modules', $edit, t('Install'));
 
       // Verify the strings from the translation are still as expected.
@@ -152,9 +147,9 @@ ENDPO;
     $test_samples = ['Save and continue', 'Anonymous', 'Language'];
     $langcodes = ['de', 'es'];
 
-    foreach($test_samples as $sample) {
-      foreach($langcodes as $langcode) {
-        $edit = array();
+    foreach ($test_samples as $sample) {
+      foreach ($langcodes as $langcode) {
+        $edit = [];
         $edit['langcode'] = $langcode;
         $edit['translation'] = 'translated';
         $edit['string'] = $sample;

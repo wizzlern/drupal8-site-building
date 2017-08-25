@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\comment\Tests\CommentLinksAlterTest.
- */
-
 namespace Drupal\comment\Tests;
 
 /**
@@ -14,7 +9,7 @@ namespace Drupal\comment\Tests;
  */
 class CommentLinksAlterTest extends CommentTestBase {
 
-  public static $modules = array('comment_test');
+  public static $modules = ['comment_test'];
 
   protected function setUp() {
     parent::setUp();

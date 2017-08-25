@@ -1,8 +1,4 @@
 <?php
-/**
- * @file
- * Contains \Drupal\shortcut\Plugin\migrate\source\d7\ShortcutSet.
- */
 
 namespace Drupal\shortcut\Plugin\migrate\source\d7;
 
@@ -29,10 +25,10 @@ class ShortcutSet extends DrupalSqlBase {
    * {@inheritdoc}
    */
   public function fields() {
-    return array(
+    return [
       'set_name' => $this->t("The name under which the set's links are stored."),
       'title' => $this->t("The title of the set."),
-    );
+    ];
   }
 
   /**

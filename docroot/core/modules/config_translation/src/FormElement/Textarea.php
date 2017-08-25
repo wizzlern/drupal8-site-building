@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\config_translation\FormElement\Textarea.
- */
-
 namespace Drupal\config_translation\FormElement;
 
 use Drupal\Core\Language\LanguageInterface;
@@ -23,10 +18,10 @@ class Textarea extends FormElementBase {
     $rows_newlines = substr_count($translation_config, "\n" ) + 1;
     $rows = max($rows_words, $rows_newlines);
 
-    return array(
+    return [
       '#type' => 'textarea',
       '#rows' => $rows,
-    ) + parent::getTranslationElement($translation_language, $source_config, $translation_config);
+    ] + parent::getTranslationElement($translation_language, $source_config, $translation_config);
   }
 
 }

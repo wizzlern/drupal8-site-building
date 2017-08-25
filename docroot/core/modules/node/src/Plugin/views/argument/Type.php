@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\node\Plugin\views\argument\Type.
- */
-
 namespace Drupal\node\Plugin\views\argument;
 
 use Drupal\Core\Entity\EntityStorageInterface;
@@ -19,7 +14,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class Type extends StringArgument {
 
   /**
-   * NodeType storage controller.
+   * NodeType storage handler.
    *
    * @var \Drupal\Core\Entity\EntityStorageInterface
    */
@@ -68,11 +63,11 @@ class Type extends StringArgument {
    * Override the behavior of title(). Get the user friendly version of the
    * node type.
    */
-  function title() {
+  public function title() {
     return $this->node_type($this->argument);
   }
 
-  function node_type($type_name) {
+  public function node_type($type_name) {
     $type = $this->nodeTypeStorage->load($type_name);
     $output = $type ? $type->label() : $this->t('Unknown content type');
     return $output;

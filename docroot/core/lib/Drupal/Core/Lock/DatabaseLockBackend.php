@@ -1,14 +1,10 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Core\Lock\DatabaseLockBackend.
- */
-
 namespace Drupal\Core\Lock;
 
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Database\IntegrityConstraintViolationException;
+use Drupal\Core\Database\SchemaObjectExistsException;
 
 /**
  * Defines the database lock backend. This is the default backend in Drupal.
@@ -16,6 +12,11 @@ use Drupal\Core\Database\IntegrityConstraintViolationException;
  * @ingroup lock
  */
 class DatabaseLockBackend extends LockBackendAbstract {
+
+  /**
+   * The database table name.
+   */
+  const TABLE_NAME = 'semaphore';
 
   /**
    * The database connection.
@@ -33,7 +34,7 @@ class DatabaseLockBackend extends LockBackendAbstract {
   public function __construct(Connection $database) {
     // __destruct() is causing problems with garbage collections, register a
     // shutdown function instead.
-    drupal_register_shutdown_function(array($this, 'releaseAll'));
+    drupal_register_shutdown_function([$this, 'releaseAll']);
     $this->database = $database;
   }
 
@@ -47,7 +48,7 @@ class DatabaseLockBackend extends LockBackendAbstract {
     if (isset($this->locks[$name])) {
       // Try to extend the expiration of a lock we already acquired.
       $success = (bool) $this->database->update('semaphore')
-        ->fields(array('expire' => $expire))
+        ->fields(['expire' => $expire])
         ->condition('name', $name)
         ->condition('value', $this->getLockId())
         ->execute();
@@ -65,11 +66,11 @@ class DatabaseLockBackend extends LockBackendAbstract {
       do {
         try {
           $this->database->insert('semaphore')
-            ->fields(array(
+            ->fields([
               'name' => $name,
               'value' => $this->getLockId(),
               'expire' => $expire,
-            ))
+            ])
             ->execute();
           // We track all acquired locks in the global variable.
           $this->locks[$name] = TRUE;
@@ -84,6 +85,16 @@ class DatabaseLockBackend extends LockBackendAbstract {
           // the offending row from the database table in case it has expired.
           $retry = $retry ? FALSE : $this->lockMayBeAvailable($name);
         }
+        catch (\Exception $e) {
+          // Create the semaphore table if it does not exist and retry.
+          if ($this->ensureTableExists()) {
+            // Retry only once.
+            $retry = !$retry;
+          }
+          else {
+            throw $e;
+          }
+        }
         // We only retry in case the first attempt failed, but we then broke
         // an expired lock.
       } while ($retry);
@@ -95,7 +106,14 @@ class DatabaseLockBackend extends LockBackendAbstract {
    * {@inheritdoc}
    */
   public function lockMayBeAvailable($name) {
-    $lock = $this->database->query('SELECT expire, value FROM {semaphore} WHERE name = :name', array(':name' => $name))->fetchAssoc();
+    try {
+      $lock = $this->database->query('SELECT expire, value FROM {semaphore} WHERE name = :name', [':name' => $name])->fetchAssoc();
+    }
+    catch (\Exception $e) {
+      $this->catchException($e);
+      // If the table does not exist yet then the lock may be available.
+      $lock = FALSE;
+    }
     if (!$lock) {
       return TRUE;
     }
@@ -119,10 +137,15 @@ class DatabaseLockBackend extends LockBackendAbstract {
    */
   public function release($name) {
     unset($this->locks[$name]);
-    $this->database->delete('semaphore')
-      ->condition('name', $name)
-      ->condition('value', $this->getLockId())
-      ->execute();
+    try {
+      $this->database->delete('semaphore')
+        ->condition('name', $name)
+        ->condition('value', $this->getLockId())
+        ->execute();
+    }
+    catch (\Exception $e) {
+      $this->catchException($e);
+    }
   }
 
   /**
@@ -131,7 +154,7 @@ class DatabaseLockBackend extends LockBackendAbstract {
   public function releaseAll($lock_id = NULL) {
     // Only attempt to release locks if any were acquired.
     if (!empty($this->locks)) {
-      $this->locks = array();
+      $this->locks = [];
       if (empty($lock_id)) {
         $lock_id = $this->getLockId();
       }
@@ -140,4 +163,80 @@ class DatabaseLockBackend extends LockBackendAbstract {
         ->execute();
     }
   }
+
+  /**
+   * Check if the semaphore table exists and create it if not.
+   */
+  protected function ensureTableExists() {
+    try {
+      $database_schema = $this->database->schema();
+      if (!$database_schema->tableExists(static::TABLE_NAME)) {
+        $schema_definition = $this->schemaDefinition();
+        $database_schema->createTable(static::TABLE_NAME, $schema_definition);
+        return TRUE;
+      }
+    }
+    // If another process has already created the semaphore table, attempting to
+    // recreate it will throw an exception. In this case just catch the
+    // exception and do nothing.
+    catch (SchemaObjectExistsException $e) {
+      return TRUE;
+    }
+    return FALSE;
+  }
+
+  /**
+   * Act on an exception when semaphore might be stale.
+   *
+   * If the table does not yet exist, that's fine, but if the table exists and
+   * yet the query failed, then the semaphore is stale and the exception needs
+   * to propagate.
+   *
+   * @param $e
+   *   The exception.
+   *
+   * @throws \Exception
+   */
+  protected function catchException(\Exception $e) {
+    if ($this->database->schema()->tableExists(static::TABLE_NAME)) {
+      throw $e;
+    }
+  }
+
+  /**
+   * Defines the schema for the semaphore table.
+   */
+  public function schemaDefinition() {
+    return [
+      'description' => 'Table for holding semaphores, locks, flags, etc. that cannot be stored as state since they must not be cached.',
+      'fields' => [
+        'name' => [
+          'description' => 'Primary Key: Unique name.',
+          'type' => 'varchar_ascii',
+          'length' => 255,
+          'not null' => TRUE,
+          'default' => ''
+        ],
+        'value' => [
+          'description' => 'A value for the semaphore.',
+          'type' => 'varchar_ascii',
+          'length' => 255,
+          'not null' => TRUE,
+          'default' => ''
+        ],
+        'expire' => [
+          'description' => 'A Unix timestamp with microseconds indicating when the semaphore should expire.',
+          'type' => 'float',
+          'size' => 'big',
+          'not null' => TRUE
+        ],
+      ],
+      'indexes' => [
+        'value' => ['value'],
+        'expire' => ['expire'],
+      ],
+      'primary key' => ['name'],
+    ];
+  }
+
 }

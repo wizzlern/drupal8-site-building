@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\field\Plugin\migrate\source\d7\FieldInstancePerFormDisplay.
- */
-
 namespace Drupal\field\Plugin\migrate\source\d7;
 
 use Drupal\migrate\Row;
@@ -24,17 +19,16 @@ class FieldInstancePerFormDisplay extends DrupalSqlBase {
    */
   public function query() {
     $query = $this->select('field_config_instance', 'fci')
-      ->fields('fci', array(
+      ->fields('fci', [
         'field_name',
         'bundle',
         'data',
         'entity_type'
-      ))
-      ->fields('fc', array(
+      ])
+      ->fields('fc', [
         'type',
         'module',
-      ))
-      ->condition('fci.entity_type', 'node');
+      ]);
     $query->join('field_config', 'fc', 'fci.field_id = fc.id');
     return $query;
   }
@@ -53,27 +47,27 @@ class FieldInstancePerFormDisplay extends DrupalSqlBase {
    * {@inheritdoc}
    */
   public function fields() {
-    return array(
+    return [
       'field_name' => $this->t('The machine name of field.'),
       'bundle' => $this->t('Content type where this field is used.'),
       'data' => $this->t('Field configuration data.'),
       'entity_type' => $this->t('The entity type.'),
-    );
+    ];
   }
 
   /**
    * {@inheritdoc}
    */
   public function getIds() {
-    return array(
-      'bundle' => array(
+    return [
+      'bundle' => [
         'type' => 'string',
-      ),
-      'field_name' => array(
+      ],
+      'field_name' => [
         'type' => 'string',
         'alias' => 'fci',
-      ),
-    );
+      ],
+    ];
   }
 
 }

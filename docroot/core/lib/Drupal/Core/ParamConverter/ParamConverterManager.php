@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Core\ParamConverter\ParamConverterManager.
- */
-
 namespace Drupal\Core\ParamConverter;
 
 use Symfony\Cmf\Component\Routing\RouteObjectInterface;
@@ -23,7 +18,7 @@ class ParamConverterManager implements ParamConverterManagerInterface {
    *
    * @var array
    */
-  protected $converters = array();
+  protected $converters = [];
 
   /**
    * {@inheritdoc}

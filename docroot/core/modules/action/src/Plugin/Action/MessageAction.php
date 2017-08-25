@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\action\Plugin\Action\MessageAction.
- */
-
 namespace Drupal\action\Plugin\Action;
 
 use Drupal\Core\Access\AccessResult;
@@ -28,6 +23,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class MessageAction extends ConfigurableActionBase implements ContainerFactoryPluginInterface {
 
   /**
+   * The token service.
+   *
    * @var \Drupal\Core\Utility\Token
    */
   protected $token;
@@ -48,10 +45,8 @@ class MessageAction extends ConfigurableActionBase implements ContainerFactoryPl
    *   The plugin_id for the plugin instance.
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
-   * @param \Drupal\Core\Utility\Token
-   *   The token service.
    * @param \Drupal\Core\Utility\Token $token
-   *   The token replacement service.
+   *   The token service.
    * @param \Drupal\Core\Render\RendererInterface $renderer
    *   The renderer.
    */
@@ -89,23 +84,23 @@ class MessageAction extends ConfigurableActionBase implements ContainerFactoryPl
    * {@inheritdoc}
    */
   public function defaultConfiguration() {
-    return array(
+    return [
       'message' => '',
-    );
+    ];
   }
 
   /**
    * {@inheritdoc}
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
-    $form['message'] = array(
+    $form['message'] = [
       '#type' => 'textarea',
       '#title' => t('Message'),
       '#default_value' => $this->configuration['message'],
       '#required' => TRUE,
       '#rows' => '8',
       '#description' => t('The message to be displayed to the current user. You may include placeholders like [node:title], [user:account-name], [user:display-name] and [comment:body] to represent data that will be different each time message is sent. Not all placeholders will be available in all contexts.'),
-    );
+    ];
     return $form;
   }
 

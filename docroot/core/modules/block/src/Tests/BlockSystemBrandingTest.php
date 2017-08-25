@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\block\Tests\BlockSystemBrandingTest.
- */
-
 namespace Drupal\block\Tests;
 
 /**
@@ -19,7 +14,7 @@ class BlockSystemBrandingTest extends BlockTestBase {
    *
    * @var array
    */
-  public static $modules = array('block', 'system');
+  public static $modules = ['block', 'system'];
 
   /**
    * {@inheritdoc}
@@ -31,7 +26,7 @@ class BlockSystemBrandingTest extends BlockTestBase {
       ->set('slogan', 'Community plumbing')
       ->save();
     // Add the system branding block to the page.
-    $this->drupalPlaceBlock('system_branding_block', array('region' => 'header', 'id' => 'site-branding'));
+    $this->drupalPlaceBlock('system_branding_block', ['region' => 'header', 'id' => 'site-branding']);
   }
 
   /**

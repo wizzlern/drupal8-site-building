@@ -1,16 +1,12 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Core\Config\TypedConfigManager.
- */
-
 namespace Drupal\Core\Config;
 
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Config\Schema\ConfigSchemaAlterException;
 use Drupal\Core\Config\Schema\ConfigSchemaDiscovery;
+use Drupal\Core\Config\Schema\Undefined;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\TypedData\TypedDataManager;
 
@@ -68,7 +64,6 @@ class TypedConfigManager extends TypedDataManager implements TypedConfigManagerI
     return $this->discovery;
   }
 
-
   /**
    * {@inheritdoc}
    */
@@ -84,12 +79,13 @@ class TypedConfigManager extends TypedDataManager implements TypedConfigManagerI
    */
   public function buildDataDefinition(array $definition, $value, $name = NULL, $parent = NULL) {
     // Add default values for data type and replace variables.
-    $definition += array('type' => 'undefined');
+    $definition += ['type' => 'undefined'];
 
+    $replace = [];
     $type = $definition['type'];
     if (strpos($type, ']')) {
       // Replace variable names in definition.
-      $replace = is_array($value) ? $value : array();
+      $replace = is_array($value) ? $value : [];
       if (isset($parent)) {
         $replace['%parent'] = $parent;
       }
@@ -102,7 +98,7 @@ class TypedConfigManager extends TypedDataManager implements TypedConfigManagerI
       unset($definition['type']);
     }
     // Add default values from type definition.
-    $definition += $this->getDefinition($type);
+    $definition += $this->getDefinitionWithReplacements($type, $replace);
 
     $data_definition = $this->createDataDefinition($definition['type']);
 
@@ -116,10 +112,17 @@ class TypedConfigManager extends TypedDataManager implements TypedConfigManagerI
   }
 
   /**
-   * {@inheritdoc}
+   * Determines the typed config type for a plugin ID.
+   *
+   * @param string $base_plugin_id
+   *   The plugin ID.
+   * @param array $definitions
+   *   An array of typed config definitions.
+   *
+   * @return string
+   *   The typed config type for the given plugin ID.
    */
-  public function getDefinition($base_plugin_id, $exception_on_invalid = TRUE) {
-    $definitions = $this->getDefinitions();
+  protected function determineType($base_plugin_id, array $definitions) {
     if (isset($definitions[$base_plugin_id])) {
       $type = $base_plugin_id;
     }
@@ -131,23 +134,65 @@ class TypedConfigManager extends TypedDataManager implements TypedConfigManagerI
       // If we don't have definition, return the 'undefined' element.
       $type = 'undefined';
     }
+    return $type;
+  }
+
+  /**
+   * Gets a schema definition with replacements for dynamic names.
+   *
+   * @param string $base_plugin_id
+   *   A plugin ID.
+   * @param array $replacements
+   *   An array of replacements for dynamic type names.
+   * @param bool $exception_on_invalid
+   *   (optional) This parameter is passed along to self::getDefinition().
+   *   However, self::getDefinition() does not respect this parameter, so it is
+   *   effectively useless in this context.
+   *
+   * @return array
+   *   A schema definition array.
+   */
+  protected function getDefinitionWithReplacements($base_plugin_id, array $replacements, $exception_on_invalid = TRUE) {
+    $definitions = $this->getDefinitions();
+    $type = $this->determineType($base_plugin_id, $definitions);
     $definition = $definitions[$type];
     // Check whether this type is an extension of another one and compile it.
     if (isset($definition['type'])) {
       $merge = $this->getDefinition($definition['type'], $exception_on_invalid);
       // Preserve integer keys on merge, so sequence item types can override
       // parent settings as opposed to adding unused second, third, etc. items.
-      $definition = NestedArray::mergeDeepArray(array($merge, $definition), TRUE);
+      $definition = NestedArray::mergeDeepArray([$merge, $definition], TRUE);
+
+      // Replace dynamic portions of the definition type.
+      if (!empty($replacements) && strpos($definition['type'], ']')) {
+        $sub_type = $this->determineType($this->replaceName($definition['type'], $replacements), $definitions);
+        $sub_definition = $definitions[$sub_type];
+        if (isset($definitions[$sub_type]['type'])) {
+          $sub_merge = $this->getDefinition($definitions[$sub_type]['type'], $exception_on_invalid);
+          $sub_definition = NestedArray::mergeDeepArray([$sub_merge, $definitions[$sub_type]], TRUE);
+        }
+        // Merge the newly determined subtype definition with the original
+        // definition.
+        $definition = NestedArray::mergeDeepArray([$sub_definition, $definition], TRUE);
+        $type = "$type||$sub_type";
+      }
       // Unset type so we try the merge only once per type.
       unset($definition['type']);
       $this->definitions[$type] = $definition;
     }
     // Add type and default definition class.
-    $definition += array(
+    $definition += [
       'definition_class' => '\Drupal\Core\TypedData\DataDefinition',
       'type' => $type,
-    );
+    ];
     return $definition;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getDefinition($base_plugin_id, $exception_on_invalid = TRUE) {
+    return $this->getDefinitionWithReplacements($base_plugin_id, [], $exception_on_invalid);
   }
 
   /**
@@ -225,7 +270,7 @@ class TypedConfigManager extends TypedDataManager implements TypedConfigManagerI
   protected function replaceName($name, $data) {
     if (preg_match_all("/\[(.*)\]/U", $name, $matches)) {
       // Build our list of '[value]' => replacement.
-      $replace = array();
+      $replace = [];
       foreach (array_combine($matches[0], $matches[1]) as $key => $value) {
         $replace[$key] = $this->replaceVariable($value, $data);
       }
@@ -309,7 +354,7 @@ class TypedConfigManager extends TypedDataManager implements TypedConfigManagerI
   public function hasConfigSchema($name) {
     // The schema system falls back on the Undefined class for unknown types.
     $definition = $this->getDefinition($name);
-    return is_array($definition) && ($definition['class'] != '\Drupal\Core\Config\Schema\Undefined');
+    return is_array($definition) && ($definition['class'] != Undefined::class);
   }
 
   /**

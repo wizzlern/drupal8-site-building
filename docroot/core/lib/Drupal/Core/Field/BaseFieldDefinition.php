@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Core\Field\BaseFieldDefinition.
- */
-
 namespace Drupal\Core\Field;
 
 use Drupal\Core\Cache\UnchangingCacheableDependencyTrait;
@@ -17,7 +12,7 @@ use Drupal\Core\TypedData\OptionsProviderInterface;
 /**
  * A class for defining entity fields.
  */
-class BaseFieldDefinition extends ListDataDefinition implements FieldDefinitionInterface, FieldStorageDefinitionInterface {
+class BaseFieldDefinition extends ListDataDefinition implements FieldDefinitionInterface, FieldStorageDefinitionInterface, RequiredFieldStorageDefinitionInterface {
 
   use UnchangingCacheableDependencyTrait;
 
@@ -47,7 +42,7 @@ class BaseFieldDefinition extends ListDataDefinition implements FieldDefinitionI
   /**
    * @var array
    */
-  protected $indexes = array();
+  protected $indexes = [];
 
   /**
    * Creates a new field definition.
@@ -59,7 +54,7 @@ class BaseFieldDefinition extends ListDataDefinition implements FieldDefinitionI
    *   A new field definition object.
    */
   public static function create($type) {
-    $field_definition = new static(array());
+    $field_definition = new static([]);
     $field_definition->type = $type;
     $field_definition->itemDefinition = FieldItemDataDefinition::create($field_definition);
     // Create a definition for the items, and initialize it with the default
@@ -271,7 +266,7 @@ class BaseFieldDefinition extends ListDataDefinition implements FieldDefinitionI
    * FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED.
    *
    * @param int $cardinality
-   *  The field cardinality.
+   *   The field cardinality.
    *
    * @return $this
    */
@@ -419,7 +414,7 @@ class BaseFieldDefinition extends ListDataDefinition implements FieldDefinitionI
   public function setDisplayConfigurable($display_context, $configurable) {
     // If no explicit display options have been specified, default to 'hidden'.
     if (empty($this->definition['display'][$display_context])) {
-      $this->definition['display'][$display_context]['options'] = array('type' => 'hidden');
+      $this->definition['display'][$display_context]['options'] = ['region' => 'hidden'];
     }
     $this->definition['display'][$display_context]['configurable'] = $configurable;
     return $this;
@@ -468,9 +463,9 @@ class BaseFieldDefinition extends ListDataDefinition implements FieldDefinitionI
     if (isset($value) && !is_array($value)) {
       $properties = $this->getPropertyNames();
       $property = reset($properties);
-      $value = array(
-        array($property => $value),
-      );
+      $value = [
+        [$property => $value],
+      ];
     }
     // Allow the field type to process default values.
     $field_item_list_class = $this->getClass();
@@ -487,10 +482,10 @@ class BaseFieldDefinition extends ListDataDefinition implements FieldDefinitionI
     // Unless the value is an empty array, we may need to transform it.
     if (!is_array($value) || !empty($value)) {
       if (!is_array($value)) {
-        $value = array(array($this->getMainPropertyName() => $value));
+        $value = [[$this->getMainPropertyName() => $value]];
       }
       elseif (is_array($value) && !is_numeric(array_keys($value)[0])) {
-        $value = array(0 => $value);
+        $value = [0 => $value];
       }
     }
     $this->definition['default_value'] = $value;
@@ -515,7 +510,7 @@ class BaseFieldDefinition extends ListDataDefinition implements FieldDefinitionI
     // If the field item class implements the interface, create an orphaned
     // runtime item object, so that it can be used as the options provider
     // without modifying the entity being worked on.
-    if (is_subclass_of($this->getFieldItemClass(), '\Drupal\Core\TypedData\OptionsProviderInterface')) {
+    if (is_subclass_of($this->getFieldItemClass(), OptionsProviderInterface::class)) {
       $items = $entity->get($this->getName());
       return \Drupal::service('plugin.manager.field.field_type')->createFieldItem($items, 0);
     }
@@ -638,12 +633,12 @@ class BaseFieldDefinition extends ListDataDefinition implements FieldDefinitionI
       $class = $definition['class'];
       $schema = $class::schema($this);
       // Fill in default values.
-      $schema += array(
-        'columns' => array(),
-        'unique keys' => array(),
-        'indexes' => array(),
-        'foreign keys' => array(),
-      );
+      $schema += [
+        'columns' => [],
+        'unique keys' => [],
+        'indexes' => [],
+        'foreign keys' => [],
+      ];
 
       // Merge custom indexes with those specified by the field type. Custom
       // indexes prevail.
@@ -726,6 +721,32 @@ class BaseFieldDefinition extends ListDataDefinition implements FieldDefinitionI
       return $override;
     }
     return BaseFieldOverride::createFromBaseFieldDefinition($this, $bundle);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isStorageRequired() {
+    if (isset($this->definition['storage_required'])) {
+      return (bool) $this->definition['storage_required'];
+    }
+
+    // Default to the 'required' property of the base field.
+    return $this->isRequired();
+  }
+
+  /**
+   * Sets whether the field storage is required.
+   *
+   * @param bool $required
+   *   Whether the field storage is required.
+   *
+   * @return static
+   *   The object itself for chaining.
+   */
+  public function setStorageRequired($required) {
+    $this->definition['storage_required'] = $required;
+    return $this;
   }
 
 }

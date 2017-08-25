@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\language\LanguageNegotiatorInterface.
- */
-
 namespace Drupal\language;
 
 use Drupal\Core\Session\AccountInterface;
@@ -160,7 +155,7 @@ interface LanguageNegotiatorInterface {
   /**
    * Returns the ID of the language type's primary language negotiation method.
    *
-   * @param $type
+   * @param string $type
    *   The language type.
    *
    * @return string
@@ -172,9 +167,9 @@ interface LanguageNegotiatorInterface {
   /**
    * Checks whether a language negotiation method is enabled for a language type.
    *
-   * @param $method_id
+   * @param string $method_id
    *   The language negotiation method ID.
-   * @param $type
+   * @param string $type
    *   (optional) The language type. If none is passed, all the configurable
    *   language types will be inspected.
    *
@@ -192,12 +187,12 @@ interface LanguageNegotiatorInterface {
    * @param int[] $enabled_methods
    *   An array of language negotiation method weights keyed by method ID.
    */
-  function saveConfiguration($type, $enabled_methods);
+  public function saveConfiguration($type, $enabled_methods);
 
   /**
    * Resave the configuration to purge missing negotiation methods.
    */
-  function purgeConfiguration();
+  public function purgeConfiguration();
 
   /**
    * Updates the configuration based on the given language types.
@@ -209,6 +204,6 @@ interface LanguageNegotiatorInterface {
    * @param string[] $types
    *   An array of configurable language types.
    */
-  function updateConfiguration(array $types);
+  public function updateConfiguration(array $types);
 
 }

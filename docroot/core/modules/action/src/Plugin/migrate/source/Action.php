@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\action\Plugin\migrate\source\Action.
- */
-
 namespace Drupal\action\Plugin\migrate\source;
 
 use Drupal\migrate_drupal\Plugin\migrate\source\DrupalSqlBase;
@@ -32,12 +27,12 @@ class Action extends DrupalSqlBase {
    * {@inheritdoc}
    */
   public function fields() {
-    $fields = array(
+    $fields = [
       'aid' => $this->t('Action ID'),
       'type' => $this->t('Module'),
       'callback' => $this->t('Callback function'),
       'parameters' => $this->t('Action configuration'),
-    );
+    ];
     if ($this->getModuleSchemaVersion('system') >= 7000) {
       $fields['label'] = $this->t('Label of the action');
     }

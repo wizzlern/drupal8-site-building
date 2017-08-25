@@ -7,7 +7,7 @@
 
 namespace Drupal\Tests\Core\Render;
 
-use Drupal\Component\Utility\SafeMarkup;
+use Drupal\Component\Render\MarkupInterface;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Cache\Cache;
@@ -47,13 +47,13 @@ class RendererTest extends RendererTestBase {
     }
 
     if (isset($build['#markup'])) {
-      $this->assertFalse(SafeMarkup::isSafe($build['#markup']), 'The #markup value is not marked safe before rendering.');
+      $this->assertNotInstanceOf(MarkupInterface::class, $build['#markup'], 'The #markup value is not marked safe before rendering.');
     }
     $render_output = $this->renderer->renderRoot($build);
     $this->assertSame($expected, (string) $render_output);
     if ($render_output !== '') {
-      $this->assertTrue(SafeMarkup::isSafe($render_output), 'Output of render is marked safe.');
-      $this->assertTrue(SafeMarkup::isSafe($build['#markup']), 'The #markup value is marked safe after rendering.');
+      $this->assertInstanceOf(MarkupInterface::class, $render_output, 'Output of render is marked safe.');
+      $this->assertInstanceOf(MarkupInterface::class, $build['#markup'], 'The #markup value is marked safe after rendering.');
     }
   }
 
@@ -140,6 +140,32 @@ class RendererTest extends RendererTestBase {
       '#children' => 'foo',
       'child' => ['#markup' => 'bar'],
     ], 'foo'];
+    // Ensure that content added to #markup via a #pre_render callback is safe.
+    $data[] = [[
+      '#markup' => 'foo',
+      '#pre_render' => [function($elements) {
+        $elements['#markup'] .= '<script>alert("bar");</script>';
+        return $elements;
+      }]
+    ], 'fooalert("bar");'];
+    // Test #allowed_tags in combination with #markup and #pre_render.
+    $data[] = [[
+      '#markup' => 'foo',
+      '#allowed_tags' => ['script'],
+      '#pre_render' => [function($elements) {
+        $elements['#markup'] .= '<script>alert("bar");</script>';
+        return $elements;
+      }]
+    ], 'foo<script>alert("bar");</script>'];
+    // Ensure output is escaped when adding content to #check_plain through
+    // a #pre_render callback.
+    $data[] = [[
+      '#plain_text' => 'foo',
+      '#pre_render' => [function($elements) {
+        $elements['#plain_text'] .= '<script>alert("bar");</script>';
+        return $elements;
+      }]
+    ], 'foo&lt;script&gt;alert(&quot;bar&quot;);&lt;/script&gt;'];
 
     // Part 2: render arrays using #theme and #theme_wrappers.
 
@@ -382,17 +408,17 @@ class RendererTest extends RendererTestBase {
     $first = $this->randomMachineName();
     $second = $this->randomMachineName();
     // The same array structure again, but with #sorted set to TRUE.
-    $elements = array(
-      'second' => array(
+    $elements = [
+      'second' => [
         '#weight' => 10,
         '#markup' => $second,
-      ),
-      'first' => array(
+      ],
+      'first' => [
         '#weight' => 0,
         '#markup' => $first,
-      ),
+      ],
       '#sorted' => TRUE,
-    );
+    ];
     $output = $this->renderer->renderRoot($elements);
 
     // The elements should appear in output in the same order as the array.
@@ -571,9 +597,9 @@ class RendererTest extends RendererTestBase {
    * @covers ::doRender
    */
   public function testRenderWithoutThemeArguments() {
-    $element = array(
+    $element = [
       '#theme' => 'common_test_foo',
-    );
+    ];
 
     $this->themeManager->expects($this->once())
       ->method('render')
@@ -589,11 +615,11 @@ class RendererTest extends RendererTestBase {
    * @covers ::doRender
    */
   public function testRenderWithThemeArguments() {
-    $element = array(
+    $element = [
       '#theme' => 'common_test_foo',
       '#foo' => $this->randomMachineName(),
       '#bar' => $this->randomMachineName(),
-    );
+    ];
 
     $this->themeManager->expects($this->once())
       ->method('render')
@@ -751,7 +777,7 @@ class RendererTest extends RendererTestBase {
     // #custom_property_array can not be a safe_cache_property.
     $safe_cache_properties = array_diff(Element::properties(array_filter($expected_results)), ['#custom_property_array']);
     foreach ($safe_cache_properties as $cache_property) {
-      $this->assertTrue(SafeMarkup::isSafe($data[$cache_property]), "$cache_property is marked as a safe string");
+      $this->assertInstanceOf(MarkupInterface::class, $data[$cache_property], "$cache_property is marked as a safe string");
     }
   }
 

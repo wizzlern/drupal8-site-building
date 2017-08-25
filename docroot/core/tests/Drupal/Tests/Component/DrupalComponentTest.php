@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\Component\DrupalComponentTest.
- */
-
 namespace Drupal\Tests\Component;
 
 use Drupal\Tests\UnitTestCase;
@@ -47,7 +42,7 @@ class DrupalComponentTest extends UnitTestCase {
    *   An array of class paths.
    */
   protected function findPhpClasses($dir) {
-    $classes = array();
+    $classes = [];
     foreach (new \DirectoryIterator($dir) as $file) {
       if ($file->isDir() && !$file->isDot()) {
         $classes = array_merge($classes, $this->findPhpClasses($file->getPathname()));
@@ -85,26 +80,26 @@ class DrupalComponentTest extends UnitTestCase {
    *   - File data as a string. This will be used as a virtual file.
    */
   public function providerAssertNoCoreUseage() {
-    return array(
-      array(
+    return [
+      [
         TRUE,
         '@see \\Drupal\\Core\\Something',
-      ),
-      array(
+      ],
+      [
         FALSE,
         '\\Drupal\\Core\\Something',
-      ),
-      array(
+      ],
+      [
         FALSE,
         "@see \\Drupal\\Core\\Something\n" .
         '\\Drupal\\Core\\Something',
-      ),
-      array(
+      ],
+      [
         FALSE,
         "\\Drupal\\Core\\Something\n" .
         '@see \\Drupal\\Core\\Something',
-      ),
-    );
+      ],
+    ];
   }
 
   /**
@@ -118,11 +113,11 @@ class DrupalComponentTest extends UnitTestCase {
     $file_uri = vfsStream::url('root/Test.php');
 
     try {
-      $pass = true;
+      $pass = TRUE;
       $this->assertNoCoreUsage($file_uri);
     }
     catch (\PHPUnit_Framework_AssertionFailedError $e) {
-      $pass = false;
+      $pass = FALSE;
     }
     $this->assertEquals($expected_pass, $pass, $expected_pass ?
       'Test caused a false positive' :

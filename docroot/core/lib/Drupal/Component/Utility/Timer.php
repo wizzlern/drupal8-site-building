@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Component\Utility\Timer.
- */
-
 namespace Drupal\Component\Utility;
 
 /**
@@ -14,7 +9,7 @@ namespace Drupal\Component\Utility;
  */
 class Timer {
 
-  static protected $timers = array();
+  static protected $timers = [];
 
   /**
    * Starts the timer with the specified name.

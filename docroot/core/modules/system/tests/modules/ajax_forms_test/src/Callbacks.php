@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\ajax_forms_test\Callbacks.
- */
-
 namespace Drupal\ajax_forms_test;
 
 use Drupal\Core\Ajax\AjaxResponse;
@@ -20,7 +15,7 @@ class Callbacks {
   /**
    * Ajax callback triggered by select.
    */
-  function selectCallback($form, FormStateInterface $form_state) {
+  public function selectCallback($form, FormStateInterface $form_state) {
     $response = new AjaxResponse();
     $response->addCommand(new HtmlCommand('#ajax_selected_color', $form_state->getValue('select')));
     $response->addCommand(new DataCommand('#ajax_selected_color', 'form_state_value_select', $form_state->getValue('select')));
@@ -30,10 +25,18 @@ class Callbacks {
   /**
    * Ajax callback triggered by checkbox.
    */
-  function checkboxCallback($form, FormStateInterface $form_state) {
+  public function checkboxCallback($form, FormStateInterface $form_state) {
     $response = new AjaxResponse();
     $response->addCommand(new HtmlCommand('#ajax_checkbox_value', (int) $form_state->getValue('checkbox')));
     $response->addCommand(new DataCommand('#ajax_checkbox_value', 'form_state_value_select', (int) $form_state->getValue('checkbox')));
     return $response;
   }
+
+  /**
+   * Ajax callback triggered by the checkbox in a #group.
+   */
+  public function checkboxGroupCallback($form, FormStateInterface $form_state) {
+    return $form['checkbox_in_group_wrapper'];
+  }
+
 }

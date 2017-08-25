@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\user\Tests\UserPictureTest.
- */
-
 namespace Drupal\user\Tests;
 
 use Drupal\image\Entity\ImageStyle;
@@ -38,18 +33,18 @@ class UserPictureTest extends WebTestBase {
   protected function setUp() {
     parent::setUp();
 
-    $this->webUser = $this->drupalCreateUser(array(
+    $this->webUser = $this->drupalCreateUser([
       'access content',
       'access comments',
       'post comments',
       'skip comment approval',
-    ));
+    ]);
   }
 
   /**
    * Tests creation, display, and deletion of user pictures.
    */
-  function testCreateDeletePicture() {
+  public function testCreateDeletePicture() {
     $this->drupalLogin($this->webUser);
 
     // Save a new picture.
@@ -61,17 +56,17 @@ class UserPictureTest extends WebTestBase {
     $this->assertRaw(file_uri_target($file->getFileUri()), 'User picture found on user account page.');
 
     // Delete the picture.
-    $edit = array();
+    $edit = [];
     $this->drupalPostForm('user/' . $this->webUser->id() . '/edit', $edit, t('Remove'));
-    $this->drupalPostForm(NULL, array(), t('Save'));
+    $this->drupalPostForm(NULL, [], t('Save'));
 
     // Call file_cron() to clean up the file. Make sure the timestamp
     // of the file is older than the system.file.temporary_maximum_age
     // configuration value.
     db_update('file_managed')
-      ->fields(array(
+      ->fields([
         'changed' => REQUEST_TIME - ($this->config('system.file')->get('temporary_maximum_age') + 1),
-      ))
+      ])
       ->condition('fid', $file->id())
       ->execute();
     \Drupal::service('cron')->run();
@@ -86,21 +81,21 @@ class UserPictureTest extends WebTestBase {
   /**
    * Tests embedded users on node pages.
    */
-  function testPictureOnNodeComment() {
+  public function testPictureOnNodeComment() {
     $this->drupalLogin($this->webUser);
 
     // Save a new picture.
     $image = current($this->drupalGetTestFiles('image'));
     $file = $this->saveUserPicture($image);
 
-    $node = $this->drupalCreateNode(array('type' => 'article'));
+    $node = $this->drupalCreateNode(['type' => 'article']);
 
     // Enable user pictures on nodes.
     $this->config('system.theme.global')->set('features.node_user_picture', TRUE)->save();
 
     $image_style_id = $this->config('core.entity_view_display.user.user.compact')->get('content.user_picture.settings.image_style');
     $style = ImageStyle::load($image_style_id);
-    $image_url = $style->buildUrl($file->getfileUri());
+    $image_url = file_url_transform_relative($style->buildUrl($file->getfileUri()));
     $alt_text = 'Profile picture for user ' . $this->webUser->getUsername();
 
     // Verify that the image is displayed on the node page.
@@ -114,9 +109,9 @@ class UserPictureTest extends WebTestBase {
       ->set('features.comment_user_picture', TRUE)
       ->save();
 
-    $edit = array(
+    $edit = [
       'comment_body[0][value]' => $this->randomString(),
-    );
+    ];
     $this->drupalPostForm('comment/reply/node/' . $node->id() . '/comment', $edit, t('Save'));
     $elements = $this->cssSelect('.comment__meta .field--name-user-picture img[alt="' . $alt_text . '"][src="' . $image_url . '"]');
     $this->assertEqual(count($elements), 1, 'User picture with alt text found on the comment.');
@@ -134,14 +129,15 @@ class UserPictureTest extends WebTestBase {
   /**
    * Edits the user picture for the test user.
    */
-  function saveUserPicture($image) {
-    $edit = array('files[user_picture_0]' => drupal_realpath($image->uri));
+  public function saveUserPicture($image) {
+    $edit = ['files[user_picture_0]' => drupal_realpath($image->uri)];
     $this->drupalPostForm('user/' . $this->webUser->id() . '/edit', $edit, t('Save'));
 
     // Load actual user data from database.
     $user_storage = $this->container->get('entity.manager')->getStorage('user');
-    $user_storage->resetCache(array($this->webUser->id()));
+    $user_storage->resetCache([$this->webUser->id()]);
     $account = $user_storage->load($this->webUser->id());
     return File::load($account->user_picture->target_id);
   }
+
 }

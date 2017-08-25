@@ -4,6 +4,7 @@
  * @file
  * Contains main module functionality.
  */
+
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
@@ -21,10 +22,10 @@ function views_entity_test_entity_base_field_info(EntityTypeInterface $entity_ty
       ->setLabel(t('Test access'))
       ->setTranslatable(FALSE)
       ->setSetting('max_length', 64)
-      ->setDisplayOptions('form', array(
+      ->setDisplayOptions('form', [
         'type' => 'string_textfield',
         'weight' => 10,
-      ));
+      ]);
     return $definitions;
   }
 }
@@ -38,7 +39,7 @@ function views_entity_test_entity_field_access($operation, FieldDefinitionInterf
   if ($field_definition->getName() == 'test_text_access') {
     if ($items) {
       if ($items->value == 'no access value') {
-        return AccessResult::forbidden()->cacheUntilEntityChanges($items->getEntity());
+        return AccessResult::forbidden()->addCacheableDependency($items->getEntity());
       }
     }
   }

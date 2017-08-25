@@ -94,7 +94,7 @@ class PathBasedBreadcrumbBuilderTest extends UnitTestCase {
 
     $this->requestMatcher = $this->getMock('\Symfony\Component\Routing\Matcher\RequestMatcherInterface');
 
-    $config_factory = $this->getConfigFactoryStub(array('system.site' => array('front' => 'test_frontpage')));
+    $config_factory = $this->getConfigFactoryStub(['system.site' => ['front' => 'test_frontpage']]);
 
     $this->pathProcessor = $this->getMock('\Drupal\Core\PathProcessor\InboundPathProcessorInterface');
     $this->context = $this->getMock('\Drupal\Core\Routing\RequestContext');
@@ -142,7 +142,7 @@ class PathBasedBreadcrumbBuilderTest extends UnitTestCase {
 
     $breadcrumb = $this->builder->build($this->getMock('Drupal\Core\Routing\RouteMatchInterface'));
     $this->assertEquals([], $breadcrumb->getLinks());
-    $this->assertEquals(['url.path'], $breadcrumb->getCacheContexts());
+    $this->assertEquals(['url.path.parent'], $breadcrumb->getCacheContexts());
     $this->assertEquals([], $breadcrumb->getCacheTags());
     $this->assertEquals(Cache::PERMANENT, $breadcrumb->getCacheMaxAge());
   }
@@ -159,7 +159,7 @@ class PathBasedBreadcrumbBuilderTest extends UnitTestCase {
 
     $breadcrumb = $this->builder->build($this->getMock('Drupal\Core\Routing\RouteMatchInterface'));
     $this->assertEquals([0 => new Link('Home', new Url('<front>'))], $breadcrumb->getLinks());
-    $this->assertEquals(['url.path'], $breadcrumb->getCacheContexts());
+    $this->assertEquals(['url.path.parent'], $breadcrumb->getCacheContexts());
     $this->assertEquals([], $breadcrumb->getCacheTags());
     $this->assertEquals(Cache::PERMANENT, $breadcrumb->getCacheMaxAge());
   }
@@ -182,11 +182,11 @@ class PathBasedBreadcrumbBuilderTest extends UnitTestCase {
       ->method('matchRequest')
       ->will($this->returnCallback(function(Request $request) use ($route_1) {
         if ($request->getPathInfo() == '/example') {
-          return array(
+          return [
             RouteObjectInterface::ROUTE_NAME => 'example',
             RouteObjectInterface::ROUTE_OBJECT => $route_1,
-            '_raw_variables' => new ParameterBag(array()),
-          );
+            '_raw_variables' => new ParameterBag([]),
+          ];
         }
       }));
 
@@ -194,7 +194,7 @@ class PathBasedBreadcrumbBuilderTest extends UnitTestCase {
 
     $breadcrumb = $this->builder->build($this->getMock('Drupal\Core\Routing\RouteMatchInterface'));
     $this->assertEquals([0 => new Link('Home', new Url('<front>')), 1 => new Link('Example', new Url('example'))], $breadcrumb->getLinks());
-    $this->assertEquals(['url.path', 'user.permissions'], $breadcrumb->getCacheContexts());
+    $this->assertEquals(['url.path.parent', 'user.permissions'], $breadcrumb->getCacheContexts());
     $this->assertEquals([], $breadcrumb->getCacheTags());
     $this->assertEquals(Cache::PERMANENT, $breadcrumb->getCacheMaxAge());
   }
@@ -218,18 +218,18 @@ class PathBasedBreadcrumbBuilderTest extends UnitTestCase {
       ->method('matchRequest')
       ->will($this->returnCallback(function(Request $request) use ($route_1, $route_2) {
         if ($request->getPathInfo() == '/example/bar') {
-          return array(
+          return [
             RouteObjectInterface::ROUTE_NAME => 'example_bar',
             RouteObjectInterface::ROUTE_OBJECT => $route_1,
-            '_raw_variables' => new ParameterBag(array()),
-          );
+            '_raw_variables' => new ParameterBag([]),
+          ];
         }
         elseif ($request->getPathInfo() == '/example') {
-          return array(
+          return [
             RouteObjectInterface::ROUTE_NAME => 'example',
             RouteObjectInterface::ROUTE_OBJECT => $route_2,
-            '_raw_variables' => new ParameterBag(array()),
-          );
+            '_raw_variables' => new ParameterBag([]),
+          ];
         }
       }));
 
@@ -245,7 +245,7 @@ class PathBasedBreadcrumbBuilderTest extends UnitTestCase {
       new Link('Example', new Url('example')),
       new Link('Bar', new Url('example_bar')),
     ], $breadcrumb->getLinks());
-    $this->assertEquals(['bar', 'url.path', 'user.permissions'], $breadcrumb->getCacheContexts());
+    $this->assertEquals(['bar', 'url.path.parent', 'user.permissions'], $breadcrumb->getCacheContexts());
     $this->assertEquals(['example'], $breadcrumb->getCacheTags());
     $this->assertEquals(Cache::PERMANENT, $breadcrumb->getCacheMaxAge());
   }
@@ -272,7 +272,7 @@ class PathBasedBreadcrumbBuilderTest extends UnitTestCase {
 
     // No path matched, though at least the frontpage is displayed.
     $this->assertEquals([0 => new Link('Home', new Url('<front>'))], $breadcrumb->getLinks());
-    $this->assertEquals(['url.path'], $breadcrumb->getCacheContexts());
+    $this->assertEquals(['url.path.parent'], $breadcrumb->getCacheContexts());
     $this->assertEquals([], $breadcrumb->getCacheTags());
     $this->assertEquals(Cache::PERMANENT, $breadcrumb->getCacheMaxAge());
   }
@@ -286,11 +286,11 @@ class PathBasedBreadcrumbBuilderTest extends UnitTestCase {
    * @see \Drupal\Tests\system\Unit\Breadcrumbs\PathBasedBreadcrumbBuilderTest::testBuildWithException()
    */
   public function providerTestBuildWithException() {
-    return array(
-      array('Drupal\Core\ParamConverter\ParamNotConvertedException', ''),
-      array('Symfony\Component\Routing\Exception\MethodNotAllowedException', array()),
-      array('Symfony\Component\Routing\Exception\ResourceNotFoundException', ''),
-    );
+    return [
+      ['Drupal\Core\ParamConverter\ParamNotConvertedException', ''],
+      ['Symfony\Component\Routing\Exception\MethodNotAllowedException', []],
+      ['Symfony\Component\Routing\Exception\ResourceNotFoundException', ''],
+    ];
   }
 
   /**
@@ -310,13 +310,13 @@ class PathBasedBreadcrumbBuilderTest extends UnitTestCase {
 
     $this->requestMatcher->expects($this->any())
       ->method('matchRequest')
-      ->will($this->returnValue(array()));
+      ->will($this->returnValue([]));
 
     $breadcrumb = $this->builder->build($this->getMock('Drupal\Core\Routing\RouteMatchInterface'));
 
     // No path matched, though at least the frontpage is displayed.
     $this->assertEquals([0 => new Link('Home', new Url('<front>'))], $breadcrumb->getLinks());
-    $this->assertEquals(['url.path'], $breadcrumb->getCacheContexts());
+    $this->assertEquals(['url.path.parent'], $breadcrumb->getCacheContexts());
     $this->assertEquals([], $breadcrumb->getCacheTags());
     $this->assertEquals(Cache::PERMANENT, $breadcrumb->getCacheMaxAge());
   }
@@ -348,11 +348,11 @@ class PathBasedBreadcrumbBuilderTest extends UnitTestCase {
       ->method('matchRequest')
       ->will($this->returnCallback(function(Request $request) use ($route_1) {
         if ($request->getPathInfo() == '/user/1') {
-          return array(
+          return [
             RouteObjectInterface::ROUTE_NAME => 'user_page',
             RouteObjectInterface::ROUTE_OBJECT => $route_1,
-            '_raw_variables' => new ParameterBag(array()),
-          );
+            '_raw_variables' => new ParameterBag([]),
+          ];
         }
       }));
 
@@ -364,7 +364,7 @@ class PathBasedBreadcrumbBuilderTest extends UnitTestCase {
 
     $breadcrumb = $this->builder->build($this->getMock('Drupal\Core\Routing\RouteMatchInterface'));
     $this->assertEquals([0 => new Link('Home', new Url('<front>')), 1 => new Link('Admin', new Url('user_page'))], $breadcrumb->getLinks());
-    $this->assertEquals(['url.path', 'user.permissions'], $breadcrumb->getCacheContexts());
+    $this->assertEquals(['url.path.parent', 'user.permissions'], $breadcrumb->getCacheContexts());
     $this->assertEquals([], $breadcrumb->getCacheTags());
     $this->assertEquals(Cache::PERMANENT, $breadcrumb->getCacheMaxAge());
   }

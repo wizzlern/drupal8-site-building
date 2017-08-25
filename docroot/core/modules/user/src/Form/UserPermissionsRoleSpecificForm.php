@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\user\Form\UserPermissionsRoleSpecificForm.
- */
-
 namespace Drupal\user\Form;
 
 use Drupal\Core\Form\FormStateInterface;
@@ -26,7 +21,7 @@ class UserPermissionsRoleSpecificForm extends UserPermissionsForm {
    * {@inheritdoc}
    */
   protected function getRoles() {
-    return array($this->userRole->id() => $this->userRole);
+    return [$this->userRole->id() => $this->userRole];
   }
 
   /**

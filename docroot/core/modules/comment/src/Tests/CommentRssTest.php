@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\comment\Tests\CommentRssTest.
- */
-
 namespace Drupal\comment\Tests;
 
 use Drupal\comment\Plugin\Field\FieldType\CommentItemInterface;
@@ -26,7 +21,7 @@ class CommentRssTest extends CommentTestBase {
    *
    * @var array
    */
-  public static $modules = array('views');
+  public static $modules = ['views'];
 
   /**
    * {@inheritdoc}
@@ -47,7 +42,7 @@ class CommentRssTest extends CommentTestBase {
   /**
    * Tests comments as part of an RSS feed.
    */
-  function testCommentRss() {
+  public function testCommentRss() {
     // Find comment in RSS feed.
     $this->drupalLogin($this->webUser);
     $this->postComment($this->node, $this->randomMachineName(), $this->randomMachineName());
@@ -71,7 +66,7 @@ class CommentRssTest extends CommentTestBase {
       'user:3',
     ]));
 
-    $raw = '<comments>' . $this->node->url('canonical', array('fragment' => 'comments', 'absolute' => TRUE)) . '</comments>';
+    $raw = '<comments>' . $this->node->url('canonical', ['fragment' => 'comments', 'absolute' => TRUE]) . '</comments>';
     $this->assertRaw($raw, 'Comments as part of RSS feed.');
 
     // Hide comments from RSS feed and check presence.
@@ -80,4 +75,5 @@ class CommentRssTest extends CommentTestBase {
     $this->drupalGet('rss.xml');
     $this->assertNoRaw($raw, 'Hidden comments is not a part of RSS feed.');
   }
+
 }

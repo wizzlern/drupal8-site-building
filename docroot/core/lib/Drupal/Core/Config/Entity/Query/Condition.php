@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Core\Config\Entity\Query\Condition.
- */
-
 namespace Drupal\Core\Config\Entity\Query;
 
 use Drupal\Component\Utility\Unicode;
@@ -24,8 +19,8 @@ class Condition extends ConditionBase {
    */
   public function compile($configs) {
     $and = strtoupper($this->conjunction) == 'AND';
-    $single_conditions = array();
-    $condition_groups = array();
+    $single_conditions = [];
+    $condition_groups = [];
     foreach ($this->conditions as $condition) {
       if ($condition['field'] instanceof ConditionInterface) {
         $condition_groups[] = $condition;
@@ -46,7 +41,7 @@ class Condition extends ConditionBase {
         $single_conditions[] = $condition;
       }
     }
-    $return = array();
+    $return = [];
     if ($single_conditions) {
       foreach ($configs as $config_name => $config) {
         foreach ($single_conditions as $condition) {
@@ -115,7 +110,7 @@ class Condition extends ConditionBase {
    * @return bool
    *   TRUE when the condition matched to the data else FALSE.
    */
-  protected function matchArray(array $condition, array $data, array $needs_matching, array $parents = array()) {
+  protected function matchArray(array $condition, array $data, array $needs_matching, array $parents = []) {
     $parent = array_shift($needs_matching);
     if ($parent === '*') {
       $candidates = array_keys($data);
@@ -125,7 +120,7 @@ class Condition extends ConditionBase {
       if (!isset($data[$parent])) {
         $data[$parent] = NULL;
       }
-      $candidates = array($parent);
+      $candidates = [$parent];
     }
     foreach ($candidates as $key) {
       if ($needs_matching) {

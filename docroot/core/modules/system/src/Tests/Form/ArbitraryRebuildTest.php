@@ -1,13 +1,10 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\system\Tests\Form\ArbitraryRebuildTest.
- */
-
 namespace Drupal\system\Tests\Form;
 
+use Drupal\field\Entity\FieldConfig;
 use Drupal\simpletest\WebTestBase;
+use Drupal\field\Entity\FieldStorageConfig;
 
 /**
  * Tests altering forms to be rebuilt so there are multiple steps.
@@ -21,41 +18,41 @@ class ArbitraryRebuildTest extends WebTestBase {
    *
    * @var array
    */
-  public static $modules = array('text', 'form_test');
+  public static $modules = ['text', 'form_test'];
 
   protected function setUp() {
     parent::setUp();
 
     // Auto-create a field for testing.
-    entity_create('field_storage_config', array(
+    FieldStorageConfig::create([
       'entity_type' => 'user',
       'field_name' => 'test_multiple',
       'type' => 'text',
       'cardinality' => -1,
       'translatable' => FALSE,
-    ))->save();
-    entity_create('field_config', array(
+    ])->save();
+    FieldConfig::create([
       'entity_type' => 'user',
       'field_name' => 'test_multiple',
       'bundle' => 'user',
       'label' => 'Test a multiple valued field',
-    ))->save();
+    ])->save();
     entity_get_form_display('user', 'user', 'register')
-      ->setComponent('test_multiple', array(
+      ->setComponent('test_multiple', [
         'type' => 'text_textfield',
         'weight' => 0,
-      ))
+      ])
       ->save();
   }
 
   /**
    * Tests a basic rebuild with the user registration form.
    */
-  function testUserRegistrationRebuild() {
-    $edit = array(
+  public function testUserRegistrationRebuild() {
+    $edit = [
       'name' => 'foo',
       'mail' => 'bar@example.com',
-    );
+    ];
     $this->drupalPostForm('user/register', $edit, 'Rebuild');
     $this->assertText('Form rebuilt.');
     $this->assertFieldByName('name', 'foo', 'Entered username has been kept.');
@@ -65,14 +62,15 @@ class ArbitraryRebuildTest extends WebTestBase {
   /**
    * Tests a rebuild caused by a multiple value field.
    */
-  function testUserRegistrationMultipleField() {
-    $edit = array(
+  public function testUserRegistrationMultipleField() {
+    $edit = [
       'name' => 'foo',
       'mail' => 'bar@example.com',
-    );
+    ];
     $this->drupalPostForm('user/register', $edit, t('Add another item'));
     $this->assertText('Test a multiple valued field', 'Form has been rebuilt.');
     $this->assertFieldByName('name', 'foo', 'Entered username has been kept.');
     $this->assertFieldByName('mail', 'bar@example.com', 'Entered mail address has been kept.');
   }
+
 }

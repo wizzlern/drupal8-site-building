@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\aggregator\Plugin\aggregator\fetcher\DefaultFetcher.
- */
-
 namespace Drupal\aggregator\Plugin\aggregator\fetcher;
 
 use Drupal\aggregator\Plugin\FetcherInterface;
@@ -117,9 +112,10 @@ class DefaultFetcher implements FetcherInterface, ContainerFactoryPluginInterfac
       return TRUE;
     }
     catch (RequestException $e) {
-      $this->logger->warning('The feed from %site seems to be broken because of error "%error".', array('%site' => $feed->label(), '%error' => $e->getMessage()));
-      drupal_set_message(t('The feed from %site seems to be broken because of error "%error".', array('%site' => $feed->label(), '%error' => $e->getMessage())), 'warning');
+      $this->logger->warning('The feed from %site seems to be broken because of error "%error".', ['%site' => $feed->label(), '%error' => $e->getMessage()]);
+      drupal_set_message(t('The feed from %site seems to be broken because of error "%error".', ['%site' => $feed->label(), '%error' => $e->getMessage()]), 'warning');
       return FALSE;
     }
   }
+
 }

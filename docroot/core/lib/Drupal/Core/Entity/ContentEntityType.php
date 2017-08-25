@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Core\Entity\ContentEntityType.
- */
-
 namespace Drupal\Core\Entity;
 
 /**
@@ -17,10 +12,10 @@ class ContentEntityType extends EntityType implements ContentEntityTypeInterface
    */
   public function __construct($definition) {
     parent::__construct($definition);
-    $this->handlers += array(
+    $this->handlers += [
       'storage' => 'Drupal\Core\Entity\Sql\SqlContentEntityStorage',
       'view_builder' => 'Drupal\Core\Entity\EntityViewBuilder',
-    );
+    ];
   }
 
   /**
@@ -33,11 +28,11 @@ class ContentEntityType extends EntityType implements ContentEntityTypeInterface
   /**
    * {@inheritdoc}
    *
-   * @see \Drupal\Core\Entity\ContentEntityStorageInterface.
-   *
    * @throws \InvalidArgumentException
    *   If the provided class does not implement
    *   \Drupal\Core\Entity\ContentEntityStorageInterface.
+   *
+   * @see \Drupal\Core\Entity\ContentEntityStorageInterface
    */
   protected function checkStorageClass($class) {
     $required_interface = ContentEntityStorageInterface::class;

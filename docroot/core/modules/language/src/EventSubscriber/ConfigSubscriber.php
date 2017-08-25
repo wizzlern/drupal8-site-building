@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\language\EventSubscriber\ConfigSubscriber.
- */
-
 namespace Drupal\language\EventSubscriber;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
@@ -145,8 +140,8 @@ class ConfigSubscriber implements EventSubscriberInterface {
   /**
    * {@inheritdoc}
    */
-  static function getSubscribedEvents() {
-    $events[ConfigEvents::SAVE][] = array('onConfigSave', 0);
+  public static function getSubscribedEvents() {
+    $events[ConfigEvents::SAVE][] = ['onConfigSave', 0];
     return $events;
   }
 

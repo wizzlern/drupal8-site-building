@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\views\Plugin\views\display\EntityReference.
- */
-
 namespace Drupal\views\Plugin\views\display;
 
 /**
@@ -52,9 +47,9 @@ class EntityReference extends DisplayPluginBase {
 
     // Force the style plugin to 'entity_reference_style' and the row plugin to
     // 'fields'.
-    $options['style']['contains']['type'] = array('default' => 'entity_reference');
+    $options['style']['contains']['type'] = ['default' => 'entity_reference'];
     $options['defaults']['default']['style'] = FALSE;
-    $options['row']['contains']['type'] = array('default' => 'entity_reference');
+    $options['row']['contains']['type'] = ['default' => 'entity_reference'];
     $options['defaults']['default']['row'] = FALSE;
 
     // Make sure the query is not cached.
@@ -119,16 +114,20 @@ class EntityReference extends DisplayPluginBase {
 
     // Make sure the id field is included in the results.
     $id_field = $this->view->storage->get('base_field');
-    $this->id_field_alias = $this->view->query->addField($this->view->storage->get('base_table'), $id_field);
+    $id_table = $this->view->storage->get('base_table');
+    $this->id_field_alias = $this->view->query->addField($id_table, $id_field);
 
     $options = $this->getOption('entity_reference_options');
 
     // Restrict the autocomplete options based on what's been typed already.
     if (isset($options['match'])) {
       $style_options = $this->getOption('style');
-      $value = db_like($options['match']) . '%';
-      if ($options['match_operator'] != 'STARTS_WITH') {
-        $value = '%' . $value;
+      $value = db_like($options['match']);
+      if ($options['match_operator'] !== '=') {
+        $value = $value . '%';
+        if ($options['match_operator'] != 'STARTS_WITH') {
+          $value = '%' . $value;
+        }
       }
 
       // Multiple search fields are OR'd together.
@@ -138,7 +137,9 @@ class EntityReference extends DisplayPluginBase {
       foreach ($style_options['options']['search_fields'] as $field_id) {
         if (!empty($field_id)) {
           // Get the table and field names for the checked field.
-          $field_alias = $this->view->query->addField($this->view->field[$field_id]->table, $field_id);
+          $field_handler = $this->view->field[$field_id];
+          $table_alias = $this->view->query->ensureTable($field_handler->table, $field_handler->relationship);
+          $field_alias = $this->view->query->addField($table_alias, $field_handler->realField);
           $field = $this->view->query->fields[$field_alias];
           // Add an OR condition for the field.
           $conditions->condition($field['table'] . '.' . $field['field'], $value, 'LIKE');
@@ -150,7 +151,7 @@ class EntityReference extends DisplayPluginBase {
 
     // Add an IN condition for validation.
     if (!empty($options['ids'])) {
-      $this->view->query->addWhere(0, $id_field, $options['ids'], 'IN');
+      $this->view->query->addWhere(0, $id_table . '.' . $id_field, $options['ids'], 'IN');
     }
 
     $this->view->setItemsPerPage($options['limit']);
@@ -164,17 +165,18 @@ class EntityReference extends DisplayPluginBase {
     // Verify that search fields are set up.
     $style = $this->getOption('style');
     if (!isset($style['options']['search_fields'])) {
-      $errors[] = $this->t('Display "@display" needs a selected search fields to work properly. See the settings for the Entity Reference list format.', array('@display' => $this->display['display_title']));
+      $errors[] = $this->t('Display "@display" needs a selected search fields to work properly. See the settings for the Entity Reference list format.', ['@display' => $this->display['display_title']]);
     }
     else {
       // Verify that the search fields used actually exist.
       $fields = array_keys($this->handlers['field']);
       foreach ($style['options']['search_fields'] as $field_alias => $enabled) {
         if ($enabled && !in_array($field_alias, $fields)) {
-          $errors[] = $this->t('Display "@display" uses field %field as search field, but the field is no longer present. See the settings for the Entity Reference list format.', array('@display' => $this->display['display_title'], '%field' => $field_alias));
+          $errors[] = $this->t('Display "@display" uses field %field as search field, but the field is no longer present. See the settings for the Entity Reference list format.', ['@display' => $this->display['display_title'], '%field' => $field_alias]);
         }
       }
     }
     return $errors;
   }
+
 }
