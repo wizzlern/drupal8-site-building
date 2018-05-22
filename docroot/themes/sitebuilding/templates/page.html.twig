@@ -90,11 +90,12 @@
 
 </div>
 
-{% if page.footer or theme_credit %}
-  <footer>
-    {{ page.footer }}
-    {% if theme_credit %}
-      <div class = "theme-credit">{{ theme_credit }}</div>
+<footer class="site-footer">
+  <div class="layout-container">
+    {% if page.footer %}
+      <div class="site-footer__top clearfix">
+        {{ page.footer }}
+      </div>
     {% endif %}
-  </footer>
-{% endif %}
+  </div>
+</footer>
