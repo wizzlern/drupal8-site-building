@@ -65,4 +65,12 @@ function wizzlern_site_building_install() {
 
   // Enable the admin theme.
   \Drupal::configFactory()->getEditable('node.settings')->set('use_admin_theme', TRUE)->save(TRUE);
+
+  // Create some users.
+  $user = User::create([
+    'name' => 'redacteur',
+    'mail' => 'redacteur@wizzlern.nl',
+    'status' => 1,
+  ]);
+  $user->save();
 }
