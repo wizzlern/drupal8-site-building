@@ -46,7 +46,6 @@ dependencies:
   - user
   - views_ui
   - menu_link_content
-  - pathauto
   - views
 themes:
   - bartik
