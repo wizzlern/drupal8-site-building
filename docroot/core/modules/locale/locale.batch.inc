@@ -238,11 +238,13 @@ function locale_translation_http_check($uri) {
   $logger = \Drupal::logger('locale');
   try {
     $actual_uri = NULL;
-    $response = \Drupal::service('http_client_factory')->fromOptions(['allow_redirects' => [
-      'on_redirect' => function(RequestInterface $request, ResponseInterface $response, UriInterface $request_uri) use (&$actual_uri) {
-        $actual_uri = (string) $request_uri;
-      }
-    ]])->head($uri);
+    $response = \Drupal::service('http_client_factory')->fromOptions([
+      'allow_redirects' => [
+        'on_redirect' => function (RequestInterface $request, ResponseInterface $response, UriInterface $request_uri) use (&$actual_uri) {
+          $actual_uri = (string) $request_uri;
+        }
+      ],
+    ])->head($uri);
     $result = [];
 
     // Return the effective URL if it differs from the requested.
@@ -290,7 +292,7 @@ function locale_translation_http_check($uri) {
  *   File object if download was successful. FALSE on failure.
  */
 function locale_translation_download_source($source_file, $directory = 'temporary://') {
-  if ($uri = system_retrieve_file($source_file->uri, $directory)) {
+  if ($uri = system_retrieve_file($source_file->uri, $directory, FALSE, FILE_EXISTS_REPLACE)) {
     $file = clone($source_file);
     $file->type = LOCALE_TRANSLATION_LOCAL;
     $file->uri = $uri;

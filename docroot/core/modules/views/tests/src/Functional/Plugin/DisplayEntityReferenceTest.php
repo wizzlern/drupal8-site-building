@@ -125,6 +125,10 @@ class DisplayEntityReferenceTest extends ViewTestBase {
    * Tests the entity reference display plugin.
    */
   public function testEntityReferenceDisplay() {
+    // Test that the 'title' settings are not shown.
+    $this->drupalGet('admin/structure/views/view/test_display_entity_reference/edit/entity_reference_1');
+    $this->assertSession()->linkByHrefNotExists('admin/structure/views/nojs/display/test_display_entity_reference/entity_reference_1/title');
+
     // Add the new field to the fields.
     $this->drupalPostForm('admin/structure/views/nojs/add-handler/test_display_entity_reference/default/field', ['name[entity_test__' . $this->fieldName . '.' . $this->fieldName . ']' => TRUE], t('Add and configure fields'));
     $this->drupalPostForm(NULL, [], t('Apply'));
@@ -249,6 +253,12 @@ class DisplayEntityReferenceTest extends ViewTestBase {
     $this->executeView($view);
 
     $this->assertEqual(count($view->result), 2, 'Search returned two rows');
+
+    // Test that the render() return empty array for empty result.
+    $view = Views::getView('test_display_entity_reference');
+    $view->setDisplay('entity_reference_1');
+    $render = $view->display_handler->render();
+    $this->assertSame([], $render, 'Render returned empty array');
   }
 
 }

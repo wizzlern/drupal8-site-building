@@ -318,6 +318,14 @@ function install_begin_request($class_loader, &$install_state) {
     header($request->server->get('SERVER_PROTOCOL') . ' 403 Forbidden');
     exit;
   }
+  if ($install_state['interactive'] && drupal_valid_test_ua()) {
+    // Set the default timezone. While this doesn't cause any tests to fail, PHP
+    // complains if 'date.timezone' is not set in php.ini. The Australia/Sydney
+    // timezone is chosen so all tests are run using an edge case scenario
+    // (UTC+10  and DST). This choice is made to prevent timezone related
+    // regressions and reduce the fragility of the testing system in general.
+    date_default_timezone_set('Australia/Sydney');
+  }
 
   $site_path = DrupalKernel::findSitePath($request, FALSE);
   Settings::initialize(dirname(dirname(__DIR__)), $site_path, $class_loader);
@@ -407,6 +415,7 @@ function install_begin_request($class_loader, &$install_state) {
   else {
     $environment = 'prod';
   }
+  $GLOBALS['conf']['container_service_providers']['InstallerConfigOverride'] = 'Drupal\Core\Installer\ConfigOverride';
 
   // Only allow dumping the container once the hash salt has been created.
   $kernel = InstallerKernel::createFromRequest($request, $class_loader, $environment, (bool) Settings::get('hash_salt', FALSE));
@@ -754,8 +763,7 @@ function install_tasks($install_state) {
       'run' => $install_state['settings_verified'] ? INSTALL_TASK_SKIP : INSTALL_TASK_RUN_IF_NOT_COMPLETED,
       'function' => 'Drupal\Core\Installer\Form\SiteSettingsForm',
     ],
-    'install_write_profile' => [
-    ],
+    'install_write_profile' => [],
     'install_verify_database_ready' => [
       'run' => $install_state['database_ready'] ? INSTALL_TASK_SKIP : INSTALL_TASK_RUN_IF_NOT_COMPLETED,
     ],
@@ -770,10 +778,8 @@ function install_tasks($install_state) {
       'display_name' => t('Install site'),
       'type' => 'batch',
     ],
-    'install_profile_themes' => [
-    ],
-    'install_install_profile' => [
-    ],
+    'install_profile_themes' => [],
+    'install_install_profile' => [],
     'install_import_translations' => [
       'display_name' => t('Set up translations'),
       'display' => $needs_translations,
@@ -813,8 +819,7 @@ function install_tasks($install_state) {
       'type' => 'batch',
       'run' => $needs_translations ? INSTALL_TASK_RUN_IF_NOT_COMPLETED : INSTALL_TASK_SKIP,
     ],
-    'install_finished' => [
-    ],
+    'install_finished' => [],
   ];
 
   // Allow the installation profile to modify the full list of tasks.
@@ -1375,7 +1380,7 @@ function install_download_translation(&$install_state) {
  */
 function install_retrieve_file($uri, $destination) {
   $parsed_url = parse_url($uri);
-  if (is_dir(drupal_realpath($destination))) {
+  if (is_dir(\Drupal::service('file_system')->realpath($destination))) {
     // Prevent URIs with triple slashes when gluing parts together.
     $path = str_replace('///', '//', "$destination/") . drupal_basename($parsed_url['path']);
   }
@@ -1420,7 +1425,7 @@ function install_check_localization_server($uri) {
  *
  * @param string $version
  *   Version info string (e.g., 8.0.0, 8.1.0, 8.0.0-dev, 8.0.0-unstable1,
- *   8.0.0-alpha2, 8.0.0-beta3, and 8.0.0-rc4).
+ *   8.0.0-alpha2, 8.0.0-beta3, 8.6.x, and 8.0.0-rc4).
  *
  * @return array
  *   Associative array of version info:
@@ -1438,7 +1443,7 @@ function _install_get_version_info($version) {
       \.          # .
       (?P<minor>[0-9]+)    # Minor release number.
       \.          # .
-      (?P<patch>[0-9]+)    # Patch release number.
+      (?P<patch>[0-9]+|x)  # Patch release number.
     )             #
     (             #
       -           # - separator for "extra" version information.
@@ -1710,6 +1715,9 @@ function _install_prepare_import($langcodes, $server_pattern) {
           ];
           \Drupal::service('locale.project')->set($data['name'], $data);
           module_load_include('compare.inc', 'locale');
+          // Reset project information static cache so that it uses the data
+          // set above.
+          locale_translation_clear_cache_projects();
           locale_translation_check_projects_local(['drupal'], [$langcode]);
         }
       }
@@ -1810,10 +1818,11 @@ function _install_module_batch($module, $module_name, &$context) {
  * @param string $server_pattern
  *   Server access pattern (to replace language code, version number, etc. in).
  *
- * @return array
+ * @return array|null
  *   Requirements compliance array. If the translation was downloaded
  *   successfully then an empty array is returned. Otherwise the requirements
- *   error with detailed information.
+ *   error with detailed information. NULL if the file already exists for this
+ *   language code.
  */
 function install_check_translations($langcode, $server_pattern) {
   $requirements = [];
@@ -1844,10 +1853,19 @@ function install_check_translations($langcode, $server_pattern) {
     return;
   }
 
+  $version = \Drupal::VERSION;
+  // For dev releases, remove the '-dev' part and trust the translation server
+  // to fall back to the latest stable release for that branch.
+  // @see locale_translation_build_projects()
+  if (preg_match("/^(\d+\.\d+\.).*-dev$/", $version, $matches)) {
+    // Example match: 8.0.0-dev => 8.0.x (Drupal core)
+    $version = $matches[1] . 'x';
+  }
+
   // Build URL for the translation file and the translation server.
   $variables = [
     '%project' => 'drupal',
-    '%version' => \Drupal::VERSION,
+    '%version' => $version,
     '%core' => \Drupal::CORE_COMPATIBILITY,
     '%language' => $langcode,
   ];

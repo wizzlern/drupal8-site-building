@@ -228,6 +228,14 @@ class MenuLinkContent extends ContentEntityBase implements MenuLinkContentInterf
     foreach ($entities as $menu_link) {
       /** @var \Drupal\menu_link_content\Entity\MenuLinkContent $menu_link */
       $menu_link_manager->removeDefinition($menu_link->getPluginId(), FALSE);
+
+      // Children get re-attached to the menu link's parent.
+      $parent_plugin_id = $menu_link->getParentId();
+      $children = $storage->loadByProperties(['parent' => $menu_link->getPluginId()]);
+      foreach ($children as $child) {
+        /** @var \Drupal\menu_link_content\Entity\MenuLinkContent $child */
+        $child->set('parent', $parent_plugin_id)->save();
+      }
     }
   }
 
@@ -316,7 +324,7 @@ class MenuLinkContent extends ContentEntityBase implements MenuLinkContentInterf
       ->setDefaultValue(0)
       ->setDisplayOptions('view', [
         'label' => 'hidden',
-        'type' => 'integer',
+        'type' => 'number_integer',
         'weight' => 0,
       ])
       ->setDisplayOptions('form', [

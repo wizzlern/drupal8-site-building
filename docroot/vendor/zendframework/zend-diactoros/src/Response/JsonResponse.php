@@ -1,9 +1,7 @@
 <?php
 /**
- * Zend Framework (http://framework.zend.com/)
- *
- * @see       http://github.com/zendframework/zend-diactoros for the canonical source repository
- * @copyright Copyright (c) 2015-2016 Zend Technologies USA Inc. (http://www.zend.com)
+ * @see       https://github.com/zendframework/zend-diactoros for the canonical source repository
+ * @copyright Copyright (c) 2015-2017 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   https://github.com/zendframework/zend-diactoros/blob/master/LICENSE.md New BSD License
  */
 
@@ -12,6 +10,15 @@ namespace Zend\Diactoros\Response;
 use InvalidArgumentException;
 use Zend\Diactoros\Response;
 use Zend\Diactoros\Stream;
+
+use function is_object;
+use function is_resource;
+use function json_encode;
+use function json_last_error;
+use function json_last_error_msg;
+use function sprintf;
+
+use const JSON_ERROR_NONE;
 
 /**
  * JSON response.

@@ -226,6 +226,9 @@ class Schema extends DatabaseSchema {
     return $field;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getFieldTypeMap() {
     // Put :normal last so it gets preserved by array_flip. This makes
     // it much easier for modules (such as schema.module) to map
@@ -366,6 +369,9 @@ class Schema extends DatabaseSchema {
     return implode(', ', $return);
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function renameTable($table, $new_name) {
     if (!$this->tableExists($table)) {
       throw new SchemaObjectDoesNotExistException(t("Cannot rename @table to @table_new: table @table doesn't exist.", ['@table' => $table, '@table_new' => $new_name]));
@@ -378,6 +384,9 @@ class Schema extends DatabaseSchema {
     return $this->connection->query('ALTER TABLE {' . $table . '} RENAME TO `' . $info['table'] . '`');
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function dropTable($table) {
     if (!$this->tableExists($table)) {
       return FALSE;
@@ -387,6 +396,9 @@ class Schema extends DatabaseSchema {
     return TRUE;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function addField($table, $field, $spec, $keys_new = []) {
     if (!$this->tableExists($table)) {
       throw new SchemaObjectDoesNotExistException(t("Cannot add field @table.@field: table doesn't exist.", ['@field' => $field, '@table' => $table]));
@@ -422,8 +434,16 @@ class Schema extends DatabaseSchema {
         ->execute();
     }
     if (isset($spec['initial_from_field'])) {
+      if (isset($spec['initial'])) {
+        $expression = 'COALESCE(' . $spec['initial_from_field'] . ', :default_initial_value)';
+        $arguments = [':default_initial_value' => $spec['initial']];
+      }
+      else {
+        $expression = $spec['initial_from_field'];
+        $arguments = [];
+      }
       $this->connection->update($table)
-        ->expression($field, $spec['initial_from_field'])
+        ->expression($field, $expression, $arguments)
         ->execute();
     }
     if ($fixnull) {
@@ -432,6 +452,9 @@ class Schema extends DatabaseSchema {
     }
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function dropField($table, $field) {
     if (!$this->fieldExists($table, $field)) {
       return FALSE;
@@ -441,6 +464,9 @@ class Schema extends DatabaseSchema {
     return TRUE;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function fieldSetDefault($table, $field, $default) {
     if (!$this->fieldExists($table, $field)) {
       throw new SchemaObjectDoesNotExistException(t("Cannot set default value of field @table.@field: field doesn't exist.", ['@table' => $table, '@field' => $field]));
@@ -449,6 +475,9 @@ class Schema extends DatabaseSchema {
     $this->connection->query('ALTER TABLE {' . $table . '} ALTER COLUMN `' . $field . '` SET DEFAULT ' . $this->escapeDefaultValue($default));
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function fieldSetNoDefault($table, $field) {
     if (!$this->fieldExists($table, $field)) {
       throw new SchemaObjectDoesNotExistException(t("Cannot remove default value of field @table.@field: field doesn't exist.", ['@table' => $table, '@field' => $field]));
@@ -457,6 +486,9 @@ class Schema extends DatabaseSchema {
     $this->connection->query('ALTER TABLE {' . $table . '} ALTER COLUMN `' . $field . '` DROP DEFAULT');
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function indexExists($table, $name) {
     // Returns one row for each column in the index. Result is string or FALSE.
     // Details at http://dev.mysql.com/doc/refman/5.0/en/show-index.html
@@ -464,6 +496,9 @@ class Schema extends DatabaseSchema {
     return isset($row['Key_name']);
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function addPrimaryKey($table, $fields) {
     if (!$this->tableExists($table)) {
       throw new SchemaObjectDoesNotExistException(t("Cannot add primary key to table @table: table doesn't exist.", ['@table' => $table]));
@@ -475,6 +510,9 @@ class Schema extends DatabaseSchema {
     $this->connection->query('ALTER TABLE {' . $table . '} ADD PRIMARY KEY (' . $this->createKeySql($fields) . ')');
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function dropPrimaryKey($table) {
     if (!$this->indexExists($table, 'PRIMARY')) {
       return FALSE;
@@ -484,6 +522,9 @@ class Schema extends DatabaseSchema {
     return TRUE;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function addUniqueKey($table, $name, $fields) {
     if (!$this->tableExists($table)) {
       throw new SchemaObjectDoesNotExistException(t("Cannot add unique key @name to table @table: table doesn't exist.", ['@table' => $table, '@name' => $name]));
@@ -495,6 +536,9 @@ class Schema extends DatabaseSchema {
     $this->connection->query('ALTER TABLE {' . $table . '} ADD UNIQUE KEY `' . $name . '` (' . $this->createKeySql($fields) . ')');
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function dropUniqueKey($table, $name) {
     if (!$this->indexExists($table, $name)) {
       return FALSE;
@@ -521,6 +565,9 @@ class Schema extends DatabaseSchema {
     $this->connection->query('ALTER TABLE {' . $table . '} ADD INDEX `' . $name . '` (' . $this->createKeySql($indexes[$name]) . ')');
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function dropIndex($table, $name) {
     if (!$this->indexExists($table, $name)) {
       return FALSE;
@@ -530,6 +577,9 @@ class Schema extends DatabaseSchema {
     return TRUE;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function changeField($table, $field, $field_new, $spec, $keys_new = []) {
     if (!$this->fieldExists($table, $field)) {
       throw new SchemaObjectDoesNotExistException(t("Cannot change the definition of field @table.@name: field doesn't exist.", ['@table' => $table, '@name' => $field]));
@@ -545,6 +595,9 @@ class Schema extends DatabaseSchema {
     $this->connection->query($sql);
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function prepareComment($comment, $length = NULL) {
     // Truncate comment to maximum comment length.
     if (isset($length)) {
@@ -574,6 +627,9 @@ class Schema extends DatabaseSchema {
     return preg_replace('/; InnoDB free:.*$/', '', $comment);
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function tableExists($table) {
     // The information_schema table is very slow to query under MySQL 5.0.
     // Instead, we try to select from the table in question.  If it fails,
@@ -591,6 +647,9 @@ class Schema extends DatabaseSchema {
     }
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function fieldExists($table, $column) {
     // The information_schema table is very slow to query under MySQL 5.0.
     // Instead, we try to select from the table and field in question. If it

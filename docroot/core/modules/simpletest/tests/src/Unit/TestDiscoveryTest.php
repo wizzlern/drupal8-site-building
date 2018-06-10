@@ -348,8 +348,7 @@ EOF;
     $result = $test_discovery->getTestClasses(NULL, ['PHPUnit-Kernel']);
     $this->assertCount(2, $result);
     $this->assertEquals([
-      'example' => [
-      ],
+      'example' => [],
       'example2' => [
         'Drupal\Tests\test_module\Kernel\KernelExampleTest3' => [
           'name' => 'Drupal\Tests\test_module\Kernel\KernelExampleTest3',
@@ -384,6 +383,21 @@ EOF;
     $data['core-functionaljavascripttest'] = ['\Drupal\FunctionalJavascriptTests\ExampleTest', 'FunctionalJavascript'];
 
     return $data;
+  }
+
+  /**
+   * Ensure that classes are not reflected when the docblock is empty.
+   *
+   * @covers ::getTestInfo
+   */
+  public function testGetTestInfoEmptyDocblock() {
+    // If getTestInfo() performed reflection, it won't be able to find the
+    // class we asked it to analyze, so it will throw a ReflectionException.
+    // We want to make sure it didn't do that, because we already did some
+    // analysis and already have an empty docblock. getTestInfo() will throw
+    // MissingGroupException because the annotation is empty.
+    $this->setExpectedException(MissingGroupException::class);
+    TestDiscovery::getTestInfo('Drupal\Tests\simpletest\ThisTestDoesNotExistTest', '');
   }
 
 }

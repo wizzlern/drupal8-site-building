@@ -119,7 +119,7 @@ function drupal_install_schema($module) {
   _drupal_schema_initialize($schema, $module, FALSE);
 
   foreach ($schema as $name => $table) {
-    db_create_table($name, $table);
+    \Drupal::database()->schema()->createTable($name, $table);
   }
 }
 
@@ -202,7 +202,7 @@ function _drupal_schema_initialize(&$schema, $module, $remove_descriptions = TRU
 }
 
 /**
- * Typecasts values to proper datatypes.
+ * Typecasts values to proper data types.
  *
  * MySQL PDO silently casts, e.g. FALSE and '' to 0, when inserting the value
  * into an integer column, but PostgreSQL PDO does not. Look up the schema

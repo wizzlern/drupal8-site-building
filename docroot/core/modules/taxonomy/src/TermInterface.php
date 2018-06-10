@@ -57,7 +57,7 @@ interface TermInterface extends ContentEntityInterface, EntityChangedInterface {
   /**
    * Sets the name of the term.
    *
-   * @param int $name
+   * @param string $name
    *   The term's name.
    *
    * @return $this
@@ -87,6 +87,9 @@ interface TermInterface extends ContentEntityInterface, EntityChangedInterface {
    *
    * @return string
    *   The id of the vocabulary.
+   *
+   * @deprecated Scheduled for removal before Drupal 9.0.0. Use
+   *   TermInterface::bundle() instead.
    */
   public function getVocabularyId();
 

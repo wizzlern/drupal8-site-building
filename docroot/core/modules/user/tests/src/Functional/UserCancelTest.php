@@ -99,23 +99,6 @@ class UserCancelTest extends BrowserTestBase {
 
     \Drupal::service('module_installer')->install(['views']);
     \Drupal::service('router.builder')->rebuild();
-    // Update uid 1's name and password to we know it.
-    $password = user_password();
-    $account = [
-      'name' => 'user1',
-      'pass' => $this->container->get('password')->hash(trim($password)),
-    ];
-    // We cannot use $account->save() here, because this would result in the
-    // password being hashed again.
-    db_update('users_field_data')
-      ->fields($account)
-      ->condition('uid', 1)
-      ->execute();
-
-    // Reload and log in uid 1.
-    $user_storage->resetCache([1]);
-    $user1 = $user_storage->load(1);
-    $user1->pass_raw = $password;
 
     // Try to cancel uid 1's account with a different user.
     $admin_user = $this->drupalCreateUser(['administer users']);
@@ -328,7 +311,8 @@ class UserCancelTest extends BrowserTestBase {
     $revision = $revision_node->getRevisionId();
     $settings = get_object_vars($revision_node);
     $settings['revision'] = 1;
-    $settings['uid'] = 1; // Set new/current revision to someone else.
+    // Set new/current revision to someone else.
+    $settings['uid'] = 1;
     $revision_node = $this->drupalCreateNode($settings);
 
     // Attempt to cancel account.
@@ -454,7 +438,8 @@ class UserCancelTest extends BrowserTestBase {
     $revision = $revision_node->getRevisionId();
     $settings = get_object_vars($revision_node);
     $settings['revision'] = 1;
-    $settings['uid'] = 1; // Set new/current revision to someone else.
+    // Set new/current revision to someone else.
+    $settings['uid'] = 1;
     $revision_node = $this->drupalCreateNode($settings);
 
     // Attempt to cancel account.

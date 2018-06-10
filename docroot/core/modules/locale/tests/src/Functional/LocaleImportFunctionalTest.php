@@ -52,6 +52,7 @@ class LocaleImportFunctionalTest extends BrowserTestBase {
     // tests.
     $this->config('locale.settings')
       ->set('translation.import_enabled', TRUE)
+      ->set('translation.use_source', LOCALE_TRANSLATION_USE_SOURCE_LOCAL)
       ->save();
   }
 
@@ -341,7 +342,8 @@ class LocaleImportFunctionalTest extends BrowserTestBase {
 
     // Import a .po file to translate.
     $this->importPoFile($this->getPoFileWithConfigDe(), [
-      'langcode' => $langcode]);
+      'langcode' => $langcode,
+    ]);
 
     // Check that the 'Anonymous' string is translated.
     $config = \Drupal::languageManager()->getLanguageConfigOverride($langcode, 'user.settings');
