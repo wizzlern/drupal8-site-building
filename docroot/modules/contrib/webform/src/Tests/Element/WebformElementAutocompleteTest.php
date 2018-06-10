@@ -2,14 +2,12 @@
 
 namespace Drupal\webform\Tests\Element;
 
-use Drupal\webform\Tests\WebformTestBase;
-
 /**
  * Tests for webform autocomplete element.
  *
  * @group Webform
  */
-class WebformElementAutocompleteTest extends WebformTestBase {
+class WebformElementAutocompleteTest extends WebformElementTestBase {
 
   /**
    * Webforms to load.
@@ -23,6 +21,8 @@ class WebformElementAutocompleteTest extends WebformTestBase {
    */
   public function testAutocomplete() {
     global $base_path;
+
+    $this->drupalLogin($this->rootUser);
 
     /* Test #autocomplete property */
 

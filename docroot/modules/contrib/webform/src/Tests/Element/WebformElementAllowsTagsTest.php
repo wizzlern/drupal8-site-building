@@ -2,14 +2,12 @@
 
 namespace Drupal\webform\Tests\Element;
 
-use Drupal\webform\Tests\WebformTestBase;
-
 /**
  * Tests for element allowed tags.
  *
  * @group Webform
  */
-class WebformElementAllowsTagsTest extends WebformTestBase {
+class WebformElementAllowsTagsTest extends WebformElementTestBase {
 
   /**
    * Webforms to load.
@@ -19,7 +17,7 @@ class WebformElementAllowsTagsTest extends WebformTestBase {
   protected static $testWebforms = ['test_element_allowed_tags'];
 
   /**
-   * Test element element allowed tags.
+   * Test element allowed tags.
    */
   public function testAllowsTags() {
     // Check <b> tags is allowed.

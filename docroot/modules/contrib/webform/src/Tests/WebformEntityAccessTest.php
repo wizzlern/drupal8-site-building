@@ -17,7 +17,14 @@ class WebformEntityAccessTest extends WebformTestBase {
    *
    * @var array
    */
-  public static $modules = ['node', 'webform'];
+  public static $modules = ['node', 'webform', 'webform_test_submissions'];
+
+  /**
+   * Webforms to load.
+   *
+   * @var array
+   */
+  protected static $testWebforms = ['test_submissions'];
 
   /**
    * {@inheritdoc}
@@ -37,7 +44,10 @@ class WebformEntityAccessTest extends WebformTestBase {
     $this->drupalLogin($this->ownWebformUser);
 
     // Check create own webform.
-    $this->drupalPostForm('admin/structure/webform/add', ['id' => 'test_own', 'title' => 'test_own', 'elements' => "test:\n  '#markup': 'test'"], t('Save'));
+    $this->drupalPostForm('admin/structure/webform/add', ['id' => 'test_own', 'title' => 'test_own'], t('Save'));
+
+    // Add test element to own webform.
+    $this->drupalPostForm('/admin/structure/webform/manage/test_own', ['elements' => "test:\n  '#markup': 'test'"], t('Save'));
 
     // Check duplicate own webform.
     $this->drupalGet('admin/structure/webform/manage/test_own/duplicate');
@@ -93,14 +103,48 @@ class WebformEntityAccessTest extends WebformTestBase {
     global $base_path;
 
     /** @var \Drupal\webform\WebformInterface $webform */
+    $webform = Webform::load('test_submissions');
     /** @var \Drupal\webform\WebformSubmissionInterface[] $submissions */
-    list($webform, $submissions) = $this->createWebformWithSubmissions();
+    $submissions = array_values(\Drupal::entityTypeManager()->getStorage('webform_submission')->loadByProperties(['webform_id' => 'test_submissions']));
+
     $account = $this->drupalCreateUser(['access content']);
 
     $webform_id = $webform->id();
     $sid = $submissions[0]->id();
     $uid = $account->id();
     $rid = $account->getRoles()[1];
+
+    // Check 'test' access rule.
+    $this->drupalGet("webform/$webform_id/test");
+    $this->assertResponse(403, 'Webform setting access denied for test rule.');
+    $access_rules = [
+      'test' => [
+        'roles' => [],
+        'users' => [$uid],
+        'permissions' => [],
+      ],
+    ] + Webform::getDefaultAccessRules();
+    $webform->setAccessRules($access_rules)->save();
+    $this->drupalLogin($account);
+    $this->drupalGet("webform/$webform_id/test");
+    $this->assertResponse(200, 'Webform setting access for test rule.');
+    $this->drupalLogout($account);
+
+    // Check 'administer' access rule.
+    $access_rules = [
+      'administer' => [
+        'roles' => [],
+        'users' => [$uid],
+        'permissions' => [],
+      ],
+    ] + Webform::getDefaultAccessRules();
+    $webform->setAccessRules($access_rules)->save();
+    $this->drupalLogin($account);
+    $this->drupalGet("admin/structure/webform/manage/$webform_id/settings");
+    $this->assertResponse(200, 'Webform setting access for administer rule.');
+    $this->drupalGet("admin/structure/webform/manage/$webform_id/results/submissions");
+    $this->assertResponse(200, 'Webform submissions access for administer rule.');
+    $this->drupalLogout($account);
 
     // Check create authenticated/anonymous access.
     $webform->setAccessRules(Webform::getDefaultAccessRules())->save();
@@ -119,7 +163,6 @@ class WebformEntityAccessTest extends WebformTestBase {
     // Check no access.
     $this->drupalGet('webform/' . $webform->id());
     $this->assertResponse(403, 'Webform returns access denied');
-
     $any_tests = [
       'webform/{webform}' => 'create',
       'admin/structure/webform/manage/{webform}/results/submissions' => 'view_any',

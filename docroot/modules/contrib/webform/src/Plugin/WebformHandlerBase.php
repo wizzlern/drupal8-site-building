@@ -5,10 +5,12 @@ namespace Drupal\webform\Plugin;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Plugin\PluginBase;
+use Drupal\Core\Render\Element;
 use Drupal\webform\WebformInterface;
+use Drupal\webform\WebformSubmissionConditionsValidatorInterface;
 use Drupal\webform\WebformSubmissionInterface;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -22,7 +24,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 abstract class WebformHandlerBase extends PluginBase implements WebformHandlerInterface {
 
   /**
-   * The webform .
+   * The webform.
    *
    * @var \Drupal\webform\WebformInterface
    */
@@ -57,11 +59,11 @@ abstract class WebformHandlerBase extends PluginBase implements WebformHandlerIn
   protected $weight = '';
 
   /**
-   * A logger instance.
+   * The webform handler's conditions.
    *
-   * @var \Psr\Log\LoggerInterface
+   * @var array
    */
-  protected $logger;
+  protected $conditions = [];
 
   /**
    * The configuration factory.
@@ -71,6 +73,13 @@ abstract class WebformHandlerBase extends PluginBase implements WebformHandlerIn
   protected $configFactory;
 
   /**
+   * The logger factory.
+   *
+   * @var \Drupal\Core\Logger\LoggerChannelFactoryInterface
+   */
+  protected $loggerFactory;
+
+  /**
    * Webform submission storage.
    *
    * @var \Drupal\webform\WebformSubmissionStorageInterface
@@ -78,7 +87,22 @@ abstract class WebformHandlerBase extends PluginBase implements WebformHandlerIn
   protected $submissionStorage;
 
   /**
-   * Constructs a WebformElementHandlerBase object.
+   * The webform submission (server-side) conditions (#states) validator.
+   *
+   * @var \Drupal\webform\WebformSubmissionConditionsValidator
+   */
+  protected $conditionsValidator;
+
+  /**
+   * Constructs a WebformHandlerBase object.
+   *
+   * IMPORTANT:
+   * Webform handlers are initialized and serialized when they are attached to a
+   * webform. Make sure not include any services as a dependency injection
+   * that directly connect to the database. This will prevent
+   * "LogicException: The database connection is not serializable." exceptions
+   * from being thrown when a form is serialized via an Ajax callaback and/or
+   * form build.
    *
    * @param array $configuration
    *   A configuration array containing information about the plugin instance.
@@ -86,20 +110,24 @@ abstract class WebformHandlerBase extends PluginBase implements WebformHandlerIn
    *   The plugin_id for the plugin instance.
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
-   * @param \Psr\Log\LoggerInterface $logger
-   *   A logger instance.
+   * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $logger_factory
+   *   The logger factory.
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The configuration factory.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
+   * @param \Drupal\webform\WebformSubmissionConditionsValidatorInterface $conditions_validator
+   *   The webform submission conditions (#states) validator.
+   *
+   * @see \Drupal\webform\Entity\Webform::getHandlers
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, LoggerInterface $logger, ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, LoggerChannelFactoryInterface $logger_factory, ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager, WebformSubmissionConditionsValidatorInterface $conditions_validator) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
-
     $this->setConfiguration($configuration);
-    $this->logger = $logger;
+    $this->loggerFactory = $logger_factory;
     $this->configFactory = $config_factory;
     $this->submissionStorage = $entity_type_manager->getStorage('webform_submission');
+    $this->conditionsValidator = $conditions_validator;
   }
 
   /**
@@ -110,9 +138,10 @@ abstract class WebformHandlerBase extends PluginBase implements WebformHandlerIn
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('logger.factory')->get('webform'),
+      $container->get('logger.factory'),
       $container->get('config.factory'),
-      $container->get('entity_type.manager')
+      $container->get('entity_type.manager'),
+      $container->get('webform_submission.conditions_validator')
     );
   }
 
@@ -166,6 +195,13 @@ abstract class WebformHandlerBase extends PluginBase implements WebformHandlerIn
   /**
    * {@inheritdoc}
    */
+  public function supportsConditions() {
+    return $this->pluginDefinition['conditions'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getHandlerId() {
     return $this->handler_id;
   }
@@ -206,6 +242,21 @@ abstract class WebformHandlerBase extends PluginBase implements WebformHandlerIn
    */
   public function getStatus() {
     return $this->status;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setConditions(array $conditions) {
+    $this->conditions = $conditions;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getConditions() {
+    return $this->conditions;
   }
 
   /**
@@ -261,12 +312,37 @@ abstract class WebformHandlerBase extends PluginBase implements WebformHandlerIn
   /**
    * {@inheritdoc}
    */
+  public function checkConditions(WebformSubmissionInterface $webform_submission) {
+    // Return TRUE if conditions are disabled for the handler.
+    if (!$this->supportsConditions()) {
+      return TRUE;
+    }
+
+    $conditions = $this->getConditions();
+
+    // Return TRUE if no conditions are defined.
+    if (empty($conditions)) {
+      return TRUE;
+    }
+
+    $state = key($conditions);
+    $conditions = $conditions[$state];
+    $result = $this->conditionsValidator->validateConditions($conditions, $webform_submission);
+
+    // Negate result for 'disabled' state.
+    return ($state === 'disabled') ? !$result : $result;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getConfiguration() {
     return [
       'id' => $this->getPluginId(),
       'label' => $this->getLabel(),
       'handler_id' => $this->getHandlerId(),
       'status' => $this->getStatus(),
+      'conditions' => $this->getConditions(),
       'weight' => $this->getWeight(),
       'settings' => $this->configuration,
     ];
@@ -280,14 +356,16 @@ abstract class WebformHandlerBase extends PluginBase implements WebformHandlerIn
       'handler_id' => '',
       'label' => '',
       'status' => 1,
+      'conditions' => [],
       'weight' => '',
       'settings' => [],
     ];
     $this->configuration = $configuration['settings'] + $this->defaultConfiguration();
     $this->handler_id = $configuration['handler_id'];
     $this->label = $configuration['label'];
-    $this->weight = $configuration['weight'];
     $this->status = $configuration['status'];
+    $this->conditions = $configuration['conditions'];
+    $this->weight = $configuration['weight'];
     return $this;
   }
 
@@ -334,7 +412,7 @@ abstract class WebformHandlerBase extends PluginBase implements WebformHandlerIn
   protected function applyFormStateToConfiguration(FormStateInterface $form_state) {
     $values = $form_state->getValues();
     foreach ($values as $key => $value) {
-      if (isset($this->configuration[$key])) {
+      if (array_key_exists($key, $this->configuration)) {
         $this->configuration[$key] = $value;
       }
     }
@@ -348,6 +426,15 @@ abstract class WebformHandlerBase extends PluginBase implements WebformHandlerIn
    * {@inheritdoc}
    */
   public function alterElements(array &$elements, WebformInterface $webform) {}
+
+  /****************************************************************************/
+  // Webform submission methods.
+  /****************************************************************************/
+
+  /**
+   * {@inheritdoc}
+   */
+  public function overrideSettings(array &$settings, WebformSubmissionInterface $webform_submission) {}
 
   /****************************************************************************/
   // Submission form methods.
@@ -413,6 +500,15 @@ abstract class WebformHandlerBase extends PluginBase implements WebformHandlerIn
   public function postSave(WebformSubmissionInterface $webform_submission, $update = TRUE) {}
 
   /****************************************************************************/
+  // Preprocessing methods.
+  /****************************************************************************/
+
+  /**
+   * {@inheritdoc}
+   */
+  public function preprocessConfirmation(array &$variables) {}
+
+  /****************************************************************************/
   // Handler methods.
   /****************************************************************************/
 
@@ -449,6 +545,61 @@ abstract class WebformHandlerBase extends PluginBase implements WebformHandlerIn
    * {@inheritdoc}
    */
   public function deleteElement($key, array $element) {}
+
+  /****************************************************************************/
+  // Form helper methods.
+  /****************************************************************************/
+
+  /**
+   * Set configuration settings parents.
+   *
+   * This helper method looks looks for the handler default configuration keys
+   * within a form and set a matching element's #parents property to
+   * ['settings', '{element_kye}']
+   *
+   * @param array $elements
+   *   An array of form elements.
+   *
+   * @return array
+   *   Form element with #parents set.
+   */
+  protected function setSettingsParentsRecursively(array &$elements) {
+    $default_configuration = $this->defaultConfiguration();
+    foreach ($elements as $element_key => &$element) {
+      // Only a form element can have #parents.
+      if (Element::property($element_key) || !is_array($element)) {
+        continue;
+      }
+
+      // If the element has #parents property assume that it has also been
+      // defined for all sub-elements.
+      if (isset($element['#parents'])) {
+        continue;
+      }
+
+      if (array_key_exists($element_key, $default_configuration) && isset($element['#type'])) {
+        $element['#parents'] = ['settings', $element_key];
+      }
+      else {
+        $this->setSettingsParentsRecursively($element);
+      }
+    }
+    return $elements;
+  }
+
+  /****************************************************************************/
+  // Logging methods.
+  /****************************************************************************/
+
+  /**
+   * Get webform logger.
+   *
+   * @return \Drupal\Core\Logger\LoggerChannelInterface
+   *   Webform logger
+   */
+  protected function getLogger() {
+    return $this->loggerFactory->get('webform');
+  }
 
   /**
    * Log a webform handler's submission operation.

@@ -6,9 +6,12 @@ use Drupal\Component\Plugin\FallbackPluginManagerInterface;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\Extension\ThemeHandlerInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\CategorizingPluginManagerTrait;
 use Drupal\Core\Plugin\DefaultPluginManager;
 use Drupal\Core\Render\ElementInfoManagerInterface;
+use Drupal\webform\WebformSubmissionForm;
 
 /**
  * Provides a plugin manager for webform element plugins.
@@ -22,6 +25,13 @@ use Drupal\Core\Render\ElementInfoManagerInterface;
 class WebformElementManager extends DefaultPluginManager implements FallbackPluginManagerInterface, WebformElementManagerInterface {
 
   use CategorizingPluginManagerTrait;
+
+  /**
+   * The theme handler.
+   *
+   * @var \Drupal\Core\Extension\ThemeHandlerInterface
+   */
+  protected $themeHandler;
 
   /**
    * The configuration object factory.
@@ -54,15 +64,18 @@ class WebformElementManager extends DefaultPluginManager implements FallbackPlug
    *   Cache backend instance to use.
    * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
    *   The module handler.
+   * @param \Drupal\Core\Extension\ThemeHandlerInterface $theme_handler
+   *   The theme handler.
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The configuration object factory.
    * @param \Drupal\Core\Render\ElementInfoManagerInterface $element_info
    *   The element info manager.
    */
-  public function __construct(\Traversable $namespaces, CacheBackendInterface $cache_backend, ModuleHandlerInterface $module_handler, ConfigFactoryInterface $config_factory, ElementInfoManagerInterface $element_info) {
+  public function __construct(\Traversable $namespaces, CacheBackendInterface $cache_backend, ModuleHandlerInterface $module_handler, ThemeHandlerInterface $theme_handler, ConfigFactoryInterface $config_factory, ElementInfoManagerInterface $element_info) {
     parent::__construct('Plugin/WebformElement', $namespaces, $module_handler, 'Drupal\webform\Plugin\WebformElementInterface', 'Drupal\webform\Annotation\WebformElement');
     $this->configFactory = $config_factory;
     $this->elementInfo = $element_info;
+    $this->themeHandler = $theme_handler;
 
     $this->alterInfo('webform_element_info');
     $this->setCacheBackend($cache_backend, 'webform_element_plugins');
@@ -72,9 +85,12 @@ class WebformElementManager extends DefaultPluginManager implements FallbackPlug
    * {@inheritdoc}
    */
   protected function alterDefinitions(&$definitions) {
+    // Prevents Fatal error: Class 'Drupal\bootstrap\Bootstrap' during install
+    // w/ Bootstrap theme and webform.
+    $this->themeHandler->reset();
+
     // Unset elements that are missing target element or dependencies.
     foreach ($definitions as $element_key => $element_definition) {
-
       // Check that the webform element's target element info exists.
       if (!$this->elementInfo->getInfo($element_key)) {
         unset($definitions[$element_key]);
@@ -131,6 +147,37 @@ class WebformElementManager extends DefaultPluginManager implements FallbackPlug
     }
 
     return $this->instances;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function initializeElement(array &$element) {
+    $element_plugin = $this->getElementInstance($element);
+    $element_plugin->initialize($element);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function buildElement(array &$element, array $form, FormStateInterface $form_state) {
+    // Get the webform submission.
+    $form_object = $form_state->getFormObject();
+    $webform_submission = ($form_object instanceof WebformSubmissionForm) ? $form_object->getEntity() : NULL;
+
+    $element_plugin = $this->getElementInstance($element);
+    $element_plugin->prepare($element, $webform_submission);
+    $element_plugin->finalize($element, $webform_submission);
+    $element_plugin->setDefaultValue($element);
+
+    // Allow modules to alter the webform element.
+    // @see \Drupal\Core\Field\WidgetBase::formSingleElement()
+    $hooks = ['webform_element'];
+    if (!empty($element['#type'])) {
+      $hooks[] = 'webform_element_' . $element['#type'];
+    }
+    $context = ['form' => $form];
+    $this->moduleHandler->alter($hooks, $element, $form_state, $context);
   }
 
   /**

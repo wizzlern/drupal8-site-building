@@ -3,6 +3,7 @@
 namespace Drupal\webform\Plugin\WebformElement;
 
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\webform\WebformSubmissionConditionsValidator;
 use Drupal\webform\WebformSubmissionInterface;
 
 /**
@@ -12,7 +13,7 @@ use Drupal\webform\WebformSubmissionInterface;
  *   id = "checkboxes",
  *   api = "https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Render!Element!Checkboxes.php/class/Checkboxes",
  *   label = @Translation("Checkboxes"),
- *   description = @Translation("Provides a form element for a set of checkboxes, with the ability to enter a custom value."),
+ *   description = @Translation("Provides a form element for a set of checkboxes."),
  *   category = @Translation("Options elements"),
  * )
  */
@@ -22,14 +23,15 @@ class Checkboxes extends OptionsBase {
    * {@inheritdoc}
    */
   public function getDefaultProperties() {
-    return parent::getDefaultProperties() + [
+    return [
       'multiple' => TRUE,
       'multiple_error' => '',
       // Options settings.
       'options_display' => 'one_column',
+      'options_description_display' => 'description',
       // iCheck settings.
       'icheck' => '',
-    ];
+    ] + parent::getDefaultProperties();
   }
 
   /**
@@ -63,6 +65,21 @@ class Checkboxes extends OptionsBase {
       $text .= ' [' . $this->t('Checkbox') . ']';
     }
     return $selectors;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getElementSelectorInputValue($selector, $trigger, array $element, WebformSubmissionInterface $webform_submission) {
+    $input_name = WebformSubmissionConditionsValidator::getSelectorInputName($selector);
+    $option_value = WebformSubmissionConditionsValidator::getInputNameAsArray($input_name, 1);
+    $value = $this->getRawValue($element, $webform_submission) ?: [];
+    if (in_array($option_value, $value, TRUE)) {
+      return (in_array($trigger, ['checked', 'unchecked'])) ? TRUE : $value;
+    }
+    else {
+      return (in_array($trigger, ['checked', 'unchecked'])) ? FALSE : NULL;
+    }
   }
 
   /**

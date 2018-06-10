@@ -18,13 +18,29 @@ details details {
   background-color: #f8f8f8;
 }
 
+/* Reduce the width of number inputs */
+input.form-number {
+  width: 6em;
+}
+
 details details details {
   background-color: #fff;
 }
 
-/* Add white background to tooltips */
+/* Add yellow background to tooltips and tabs */
 .ui-tooltip.ui-widget {
-  background: #fff;
+  background: #fe6;;
+  border: 1px solid #ed5;
+}
+
+.webform-tabs .ui-tabs-active.ui-state-active {
+  background: #fe6;
+  border: 1px solid #ed5;
+}
+
+/* Accordion icon */
+.ui-accordion-icons .ui-icon {
+  display: inline-block;
 }
 
 /* CodeMirror viewer */
@@ -38,6 +54,7 @@ pre.webform-codemirror-runmode {
     padding-top: 0 !important; /* Using !import to ensure that <body style="padding-top: *"> set via the toolbar.module is overridden. */
   }
 
+  .region.region-highlighted,
   .shortcut-action,
   .dropbutton-wrapper,
   .block-system-breadcrumb-block,
@@ -51,8 +68,6 @@ pre.webform-codemirror-runmode {
 }
 
 /* System tray divider */
-/* @todo Issue #2862625: Rename offcanvas to two words in code and comments. https://www.drupal.org/node/2862625 */
-.ui-dialog.ui-dialog-offcanvas .ui-resizable-w,
 .ui-dialog.ui-dialog-off-canvas .ui-resizable-w {
   background-color: #bfbfba;
   border: 1px solid #6b6b6b;
@@ -60,13 +75,11 @@ pre.webform-codemirror-runmode {
 }
 
 /* System tray title bar */
-.ui-dialog.ui-dialog-offcanvas .ui-dialog-titlebar,
 .ui-dialog.ui-dialog-off-canvas .ui-dialog-titlebar {
   border-radius: 0;
 }
 
 /* System tray actions */
-.ui-dialog.ui-dialog-offcanvas .ui-dialog-content .form-actions,
 .ui-dialog.ui-dialog-off-canvas .ui-dialog-content .form-actions {
   margin: 1em 0;
 }
@@ -81,4 +94,19 @@ pre.webform-codemirror-runmode {
   color: #840;
   background: #fe6;
   border: solid 1px #ed5;
+}
+
+/* jQuery UI tabs */
+.ui-tabs .ui-tabs-panel {
+  padding: 0;
+}
+
+/* Tweak details toggle state. */
+.webform-details-toggle-state {
+  color: #0074bd;
+}
+
+.webform-details-toggle-state:hover,
+.webform-details-toggle-statelink:focus {
+  text-decoration: underline;
 }

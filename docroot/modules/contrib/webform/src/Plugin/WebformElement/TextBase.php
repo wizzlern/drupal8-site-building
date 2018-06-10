@@ -16,14 +16,22 @@ abstract class TextBase extends WebformElementBase {
    * {@inheritdoc}
    */
   public function getDefaultProperties() {
-    return parent::getDefaultProperties() + [
+    return [
+      'readonly' => FALSE,
       'size' => '',
       'minlength' => '',
       'maxlength' => '',
       'placeholder' => '',
       'autocomplete' => 'on',
       'pattern' => '',
-    ];
+    ] + parent::getDefaultProperties();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getTranslatableProperties() {
+    return array_merge(parent::getTranslatableProperties(), ['counter_message']);
   }
 
   /**
@@ -83,48 +91,51 @@ abstract class TextBase extends WebformElementBase {
       '#other__option_label' => $this->t('Custom...'),
       '#other__placeholder' => $this->t('Enter input mask...'),
       '#other__description' => $this->t('(9 = numeric; a = alphabetical; * = alphanumeric)'),
+      '#empty_option' => $this->t('- None -'),
       '#options' => [
-        '' => '',
         'Basic' => [
           "'alias': 'currency'" => $this->t('Currency - @format', ['@format' => '$ 9.99']),
           "'alias': 'mm/dd/yyyy'" => $this->t('Date - @format', ['@format' => 'mm/dd/yyyy']),
+          "'alias': 'decimal'" => $this->t('Decimal - @format', ['@format' => '1.234']),
           "'alias': 'email'" => $this->t('Email - @format', ['@format' => 'example@example.com']),
           "'alias': 'percentage'" => $this->t('Percentage - @format', ['@format' => '99%']),
           '(999) 999-9999' => $this->t('Phone - @format', ['@format' => '(999) 999-9999']),
           '99999[-9999]' => $this->t('Zip code - @format', ['@format' => '99999[-9999]']),
         ],
         'Advanced' => [
-          "'alias': 'ip'" => 'IP address - 255.255.255.255',
-          '[9-]AAA-999' => 'License plate - [9-]AAA-999',
-          "'alias': 'mac'" => 'MAC addresses - 99-99-99-99-99-99',
-          '999-99-9999' => 'SSN - 999-99-9999',
+          "'alias': 'ip'" => $this->t('IP address - @format', ['@format' => '255.255.255.255']),
+          '[9-]AAA-999' => $this->t('License plate - @format', ['@format' => '[9-]AAA-999']),
+          "'alias': 'mac'" => $this->t('MAC addresses - @format', ['@format' => '99-99-99-99-99-99']),
+          '999-99-9999' => $this->t('SSN - @format', ['@format' => '999-99-9999']),
           "'alias': 'vin'" => 'VIN (Vehicle identification number)',
         ],
       ],
     ];
     if ($this->librariesManager->isExcluded('jquery.inputmask')) {
-      $form['form']['input_mask'] ['#access'] = FALSE;
+      $form['form']['input_mask']['#access'] = FALSE;
     }
 
     // Pattern.
     $form['validation']['pattern'] = [
-      '#type' => 'textfield',
+      '#type' => 'webform_checkbox_value',
       '#title' => $this->t('Pattern'),
       '#description' => $this->t('A <a href=":href">regular expression</a> that the element\'s value is checked against.', [':href' => 'http://www.w3schools.com/js/js_regexp.asp']),
+      '#value__title' => $this->t('Pattern regular expression'),
     ];
 
     // Counter.
-    $form['validation']['counter_type'] = [
+    $form['validation']['counter_container'] = $this->getFormInlineContainer();
+    $form['validation']['counter_container']['counter_type'] = [
       '#type' => 'select',
       '#title' => $this->t('Count'),
       '#description' => $this->t('Limit entered value to a maximum number of characters or words.'),
+      '#empty_option' => $this->t('- None -'),
       '#options' => [
-        '' => '',
         'character' => $this->t('Characters'),
         'word' => $this->t('Words'),
       ],
     ];
-    $form['validation']['counter_maximum'] = [
+    $form['validation']['counter_container']['counter_maximum'] = [
       '#type' => 'number',
       '#title' => $this->t('Count maximum'),
       '#min' => 1,
@@ -148,8 +159,7 @@ abstract class TextBase extends WebformElementBase {
       ],
     ];
     if ($this->librariesManager->isExcluded('jquery.word-and-character-counter')) {
-      $form['validation']['counter_type']['#access'] = FALSE;
-      $form['validation']['counter_maximum']['#access'] = FALSE;
+      $form['validation']['counter_container']['#access'] = FALSE;
       $form['validation']['counter_message']['#access'] = FALSE;
     }
 

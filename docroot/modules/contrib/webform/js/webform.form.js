@@ -28,17 +28,21 @@
    *
    * @prop {Drupal~behaviorAttach} attach
    *   Attaches the behavior for disabling webform autosubmit.
+   *   Wizard pages need to be progressed with the Previous or Next buttons, not by pressing Enter.
    */
   Drupal.behaviors.webformDisableAutoSubmit = {
     attach: function (context) {
       // @see http://stackoverflow.com/questions/11235622/jquery-disable-form-submit-on-enter
-      $(context).find('.webform-submission-form.js-webform-disable-autosubmit input').once('webform-disable-autosubmit').on('keyup keypress', function (e) {
-        var keyCode = e.keyCode || e.which;
-        if (keyCode === 13) {
-          e.preventDefault();
-          return false;
-        }
-      });
+      $(context).find('.webform-submission-form.js-webform-disable-autosubmit input')
+        .not(':button, :submit, :reset, :image, :file')
+        .once('webform-disable-autosubmit')
+        .on('keyup keypress', function (e) {
+          var keyCode = e.keyCode || e.which;
+          if (keyCode === 13) {
+            e.preventDefault();
+            return false;
+          }
+        });
     }
   };
 
@@ -105,21 +109,12 @@
     }
   };
 
-  /**
-   * Disable validate when save draft submit button is clicked.
-   *
-   * @type {Drupal~behavior}
-   *
-   * @prop {Drupal~behaviorAttach} attach
-   *   Attaches the behavior for the webform draft submit button.
-   */
-  Drupal.behaviors.webformDraft = {
-    attach: function (context) {
-      $(context).find('#edit-draft').once('webform-draft').on('click', function () {
-        $(this.form).attr('novalidate', 'novalidate');
-      });
-    }
-  };
+  // When #state:required is triggered we need to reset the target elements
+  // custom validity.
+  $(document).on('state:required', function (e) {
+    $(e.target).filter('[data-webform-required-error]')
+      .each(function() {this.setCustomValidity('');});
+  });
 
   /**
    * Filters the webform element list by a text input search string.
@@ -189,7 +184,7 @@
       }
 
       if ($table.length) {
-        $filter_rows = $table.find('div.webform-form-filter-text-source');
+        $filter_rows = $table.find('.webform-form-filter-text-source');
         $input.on('keyup', filterElementList);
         if ($input.val()) {
           $input.keyup();
@@ -204,22 +199,5 @@
       el.parentNode.insertAfter(button, el);
     };
   }
-
-  /**
-   * Reacts to contextual links being added.
-   *
-   * @param {jQuery.Event} event
-   *   The `drupalContextualLinkAdded` event.
-   * @param {object} data
-   *   An object containing the data relevant to the event.
-   *
-   * @listens event:drupalContextualLinkAdded
-   */
-  $(document).on('drupalContextualLinkAdded', function (event, data) {
-    // Bind Ajax behaviors to all items showing the class.
-    // @todo Fix contextual links to work with use-ajax links in
-    //    https://www.drupal.org/node/2764931.
-    Drupal.attachBehaviors(data.$el[0]);
-  });
 
 })(jQuery, Drupal);
