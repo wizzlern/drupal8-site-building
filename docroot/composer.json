@@ -75,11 +75,6 @@
                 ".eslintignore",
                 ".eslintrc",
                 ".eslintrc.json",
-                "sites/default/default.settings.php",
-                "sites/default/default.services.yml",
-                "sites/development.services.yml",
-                "sites/example.settings.local.php",
-                "sites/example.sites.php",
                 "update.php",
                 "web.config"
             ],
@@ -89,7 +84,7 @@
                 "index.php",
                 "robots.txt"
             ],
-            "omit-defaults": true
+            "omit-defaults": false
         }
     }
 

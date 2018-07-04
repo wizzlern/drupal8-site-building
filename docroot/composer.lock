@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "fce58a8c0f3869e25371d6a5e4a279f1",
+    "content-hash": "494a175c9121eb0ca41a50805610849a",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -1749,16 +1749,16 @@
         },
         {
             "name": "paragonie/random_compat",
-            "version": "v2.0.16",
+            "version": "v2.0.17",
             "source": {
                 "type": "git",
                 "url": "https://github.com/paragonie/random_compat.git",
-                "reference": "7fd9ad98e675e88bb5c1c0aa350762433f608a92"
+                "reference": "29af24f25bab834fcbb38ad2a69fa93b867e070d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/paragonie/random_compat/zipball/7fd9ad98e675e88bb5c1c0aa350762433f608a92",
-                "reference": "7fd9ad98e675e88bb5c1c0aa350762433f608a92",
+                "url": "https://api.github.com/repos/paragonie/random_compat/zipball/29af24f25bab834fcbb38ad2a69fa93b867e070d",
+                "reference": "29af24f25bab834fcbb38ad2a69fa93b867e070d",
                 "shasum": ""
             },
             "require": {
@@ -1794,7 +1794,7 @@
                 "pseudorandom",
                 "random"
             ],
-            "time": "2018-07-04T16:14:12+00:00"
+            "time": "2018-07-04T16:31:37+00:00"
         },
         {
             "name": "psr/container",
